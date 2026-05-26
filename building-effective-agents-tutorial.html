@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Building Effective Agents — In-Depth Tutorial</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'neutral' });</script>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --surface: #f8f9fa;
+      --border: #e1e4e8;
+      --text: #24292e;
+      --text-muted: #6a737d;
+      --accent: #7c3aed;
+      --accent-light: #ede9fe;
+      --link: #0550ae;
+      --code-bg: #f6f8fa;
+      --toc-width: 260px;
+      --callout-note-bg: #dbeafe;
+      --callout-note-border: #3b82f6;
+      --callout-warn-bg: #fef3c7;
+      --callout-warn-border: #f59e0b;
+      --callout-tip-bg: #dcfce7;
+      --callout-tip-border: #22c55e;
+      --callout-example-bg: #f3e8ff;
+      --callout-example-border: #a855f7;
+      --callout-danger-bg: #fee2e2;
+      --callout-danger-border: #ef4444;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0d1117;
+        --surface: #161b22;
+        --border: #30363d;
+        --text: #e6edf3;
+        --text-muted: #8b949e;
+        --accent: #a78bfa;
+        --accent-light: #2e1065;
+        --link: #58a6ff;
+        --code-bg: #161b22;
+        --callout-note-bg: #1e3a5f;
+        --callout-note-border: #60a5fa;
+        --callout-warn-bg: #3d2c0a;
+        --callout-warn-border: #fbbf24;
+        --callout-tip-bg: #0d2e1a;
+        --callout-tip-border: #4ade80;
+        --callout-example-bg: #2e1a47;
+        --callout-example-border: #c084fc;
+        --callout-danger-bg: #3b0e0e;
+        --callout-danger-border: #f87171;
+      }
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 16px;
+    }
+
+    /* ── Layout ── */
+    .layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
+
+    /* ── Sidebar TOC ── */
+    .toc-sidebar {
+      width: var(--toc-width);
+      flex-shrink: 0;
+      position: sticky;
+      top: 1.5rem;
+      align-self: flex-start;
+      max-height: calc(100vh - 3rem);
+      overflow-y: auto;
+      padding: 1.5rem 1rem 1.5rem 0;
+      border-right: 1px solid var(--border);
+      margin-right: 2.5rem;
+    }
+    .toc-sidebar h3 { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.75rem; }
+    .toc-sidebar ol { list-style: none; padding: 0; }
+    .toc-sidebar li { margin: 0.35rem 0; }
+    .toc-sidebar a { color: var(--text-muted); text-decoration: none; font-size: 0.82rem; display: block; padding: 0.15rem 0 0.15rem 0.6rem; border-left: 2px solid transparent; transition: color 0.15s, border-color 0.15s; }
+    .toc-sidebar a:hover { color: var(--accent); border-left-color: var(--accent); }
+    .toc-sidebar li.sub > a { padding-left: 1.5rem; font-size: 0.78rem; }
+    .toc-top { color: var(--accent) !important; font-weight: 700; }
+
+    /* ── Main content ── */
+    main { flex: 1; min-width: 0; padding: 2.5rem 0 4rem; }
+
+    /* ── Header ── */
+    header.page-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 2rem 0; }
+    .header-inner { max-width: 1200px; margin: 0 auto; padding: 0 1rem 0 calc(var(--toc-width) + 1rem + 2.5rem); }
+    .source-tag { display: inline-block; background: var(--accent-light); color: var(--accent); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.2rem 0.6rem; border-radius: 4px; margin-bottom: 0.75rem; }
+    header.page-header h1 { font-size: 2rem; font-weight: 800; line-height: 1.25; margin-bottom: 0.5rem; }
+    .meta { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.6rem; }
+    .meta a { color: var(--link); }
+
+    /* ── Typography ── */
+    h2 { font-size: 1.5rem; font-weight: 700; margin: 2.5rem 0 1rem; padding-top: 0.5rem; border-top: 1px solid var(--border); }
+    h3 { font-size: 1.15rem; font-weight: 700; margin: 1.75rem 0 0.6rem; }
+    h4 { font-size: 1rem; font-weight: 700; margin: 1.25rem 0 0.5rem; }
+    p { margin: 0.75rem 0; }
+    a { color: var(--link); }
+    strong { font-weight: 700; }
+    ul, ol { padding-left: 1.5rem; margin: 0.5rem 0; }
+    li { margin: 0.3rem 0; }
+    hr { border: none; border-top: 1px solid var(--border); margin: 2.5rem 0; }
+
+    /* ── Code ── */
+    pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; overflow-x: auto; font-size: 0.85rem; margin: 1rem 0; line-height: 1.55; }
+    code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; font-size: 0.875em; background: var(--code-bg); border: 1px solid var(--border); border-radius: 3px; padding: 0.1em 0.35em; }
+    pre code { background: none; border: none; padding: 0; font-size: inherit; }
+
+    /* ── Callouts ── */
+    .callout { border-left: 4px solid; border-radius: 0 8px 8px 0; padding: 0.9rem 1.1rem; margin: 1.25rem 0; }
+    .callout .callout-title { font-weight: 700; font-size: 0.85rem; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 0.4rem; }
+    .callout p { margin: 0.35rem 0; }
+    .callout.note   { background: var(--callout-note-bg);    border-color: var(--callout-note-border); }
+    .callout.warn   { background: var(--callout-warn-bg);    border-color: var(--callout-warn-border); }
+    .callout.tip    { background: var(--callout-tip-bg);     border-color: var(--callout-tip-border); }
+    .callout.example{ background: var(--callout-example-bg); border-color: var(--callout-example-border); }
+    .callout.danger { background: var(--callout-danger-bg);  border-color: var(--callout-danger-border); }
+    .callout.note   .callout-title { color: var(--callout-note-border); }
+    .callout.warn   .callout-title { color: var(--callout-warn-border); }
+    .callout.tip    .callout-title { color: var(--callout-tip-border); }
+    .callout.example.callout-title { color: var(--callout-example-border); }
+    .callout.danger .callout-title { color: var(--callout-danger-border); }
+
+    /* ── Tables ── */
+    table { width: 100%; border-collapse: collapse; margin: 1.25rem 0; font-size: 0.9rem; }
+    th { background: var(--surface); font-weight: 700; text-align: left; padding: 0.6rem 0.85rem; border: 1px solid var(--border); }
+    td { padding: 0.55rem 0.85rem; border: 1px solid var(--border); vertical-align: top; }
+    tr:nth-child(even) td { background: var(--surface); }
+
+    /* ── Blockquote ── */
+    blockquote { border-left: 4px solid var(--accent); margin: 1.25rem 0; padding: 0.75rem 1.25rem; color: var(--text-muted); font-style: italic; background: var(--surface); border-radius: 0 6px 6px 0; }
+    blockquote cite { display: block; margin-top: 0.5rem; font-size: 0.85rem; font-style: normal; }
+
+    /* ── Details/Summary ── */
+    details { border: 1px solid var(--border); border-radius: 8px; margin: 1rem 0; }
+    summary { padding: 0.9rem 1.1rem; cursor: pointer; font-weight: 600; list-style: none; user-select: none; }
+    summary::-webkit-details-marker { display: none; }
+    summary::before { content: "▶ "; font-size: 0.8em; color: var(--text-muted); }
+    details[open] summary::before { content: "▼ "; }
+    details > *:not(summary) { padding: 0 1.1rem 1rem; }
+
+    /* ── Workflow pattern cards ── */
+    .pattern-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.25rem 0; }
+    .pattern-card { border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem; background: var(--surface); }
+    .pattern-card h4 { margin-top: 0; color: var(--accent); }
+    .pattern-card p { font-size: 0.9rem; color: var(--text-muted); margin: 0.4rem 0 0; }
+
+    /* ── Takeaway list ── */
+    .takeaway-list { list-style: none; padding: 0; margin: 1rem 0; display: grid; gap: 0.75rem; }
+    .takeaway-list li { display: flex; gap: 0.85rem; align-items: baseline; }
+    .t-badge { flex-shrink: 0; font-weight: 800; color: var(--accent); font-size: 1.05rem; min-width: 1.8rem; }
+
+    /* ── Mermaid diagrams ── */
+    .mermaid { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin: 1.25rem 0; overflow-x: auto; text-align: center; }
+
+    /* ── Principle pills ── */
+    .principles { display: flex; gap: 0.75rem; flex-wrap: wrap; margin: 1rem 0; }
+    .pill { display: inline-flex; align-items: center; gap: 0.4rem; background: var(--accent-light); color: var(--accent); font-weight: 700; font-size: 0.85rem; padding: 0.35rem 0.9rem; border-radius: 999px; }
+
+    /* ── Footer ── */
+    footer.page-footer { border-top: 1px solid var(--border); padding: 1.5rem 0; margin-top: 3rem; color: var(--text-muted); font-size: 0.82rem; text-align: center; }
+
+    /* ── Print ── */
+    @media print {
+      .toc-sidebar { display: none; }
+      .layout { display: block; }
+      main { padding: 0; }
+      details { display: block; }
+      details > *:not(summary) { display: block; }
+      h2 { page-break-before: always; }
+      pre { white-space: pre-wrap; }
+      .pattern-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 800px) {
+      .toc-sidebar { display: none; }
+      .header-inner { padding: 0 1rem; }
+      .pattern-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="page-header">
+  <div class="header-inner">
+    <span class="source-tag">Anthropic Engineering</span>
+    <h1>Building Effective Agents</h1>
+    <p style="font-size:1.05rem;color:var(--text-muted);margin-top:0.6rem;max-width:700px;">A practical, pattern-driven guide to designing agentic AI systems — from the simplest augmented LLM call to autonomous agents — drawn from Anthropic's work with production deployments.</p>
+    <div class="meta">
+      Source: <a href="https://www.anthropic.com/engineering/building-effective-agents">anthropic.com/engineering</a> &nbsp;·&nbsp;
+      Authors: Erik S. &amp; Barry Zhang &nbsp;·&nbsp;
+      Published: December 19, 2024 &nbsp;·&nbsp;
+      Generated tutorial: May 25, 2026 &nbsp;·&nbsp;
+      Estimated read time: 25 min
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc-sidebar" aria-label="Table of contents">
+    <h3>Contents</h3>
+    <ol>
+      <li><a href="#key-takeaways" class="toc-top">Key Takeaways ↑</a></li>
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#prerequisites">Prerequisites</a></li>
+      <li><a href="#background">1. Background &amp; Motivation</a></li>
+      <li><a href="#core-concepts">2. Core Concepts</a></li>
+      <li class="sub"><a href="#agentic-systems">Agentic systems</a></li>
+      <li class="sub"><a href="#workflows-vs-agents">Workflows vs agents</a></li>
+      <li class="sub"><a href="#augmented-llm">Augmented LLM</a></li>
+      <li><a href="#patterns">3. The Five Workflow Patterns</a></li>
+      <li class="sub"><a href="#prompt-chaining">Prompt chaining</a></li>
+      <li class="sub"><a href="#routing">Routing</a></li>
+      <li class="sub"><a href="#parallelization">Parallelization</a></li>
+      <li class="sub"><a href="#orchestrator-workers">Orchestrator-workers</a></li>
+      <li class="sub"><a href="#evaluator-optimizer">Evaluator-optimizer</a></li>
+      <li class="sub"><a href="#full-agents">Full agents</a></li>
+      <li><a href="#tool-engineering">4. Prompt Engineering Your Tools</a></li>
+      <li><a href="#worked-examples">5. Worked Examples</a></li>
+      <li><a href="#insights">6. Key Insights</a></li>
+      <li><a href="#limitations">7. Limitations &amp; Open Questions</a></li>
+      <li><a href="#glossary">8. Glossary</a></li>
+      <li><a href="#further-reading">9. Further Reading</a></li>
+      <li><a href="#quotes">Appendix: Quotes</a></li>
+    </ol>
+  </nav>
+
+  <main>
+
+    <!-- ════════ KEY TAKEAWAYS ════════ -->
+    <section id="key-takeaways">
+      <h2>Key Takeaways</h2>
+      <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:1rem;">Seven core lessons from Anthropic's experience building and advising production agent systems.</p>
+      <ol class="takeaway-list">
+        <li><span class="t-badge">01</span><span><strong>Start simpler than you think you need.</strong> Optimize a single LLM call with good retrieval and in-context examples before reaching for multi-agent systems. Add complexity only when it demonstrably improves outcomes.</span></li>
+        <li><span class="t-badge">02</span><span><strong>Workflows and agents are distinct architectural choices.</strong> Workflows use predefined code paths; agents let the LLM direct its own execution. Choose based on whether the required steps can be predicted in advance.</span></li>
+        <li><span class="t-badge">03</span><span><strong>Five composable patterns cover most production needs.</strong> Prompt chaining, routing, parallelization, orchestrator-workers, and evaluator-optimizer can be mixed and matched to handle almost any use case.</span></li>
+        <li><span class="t-badge">04</span><span><strong>Tools deserve as much engineering as prompts.</strong> Your agent-computer interface (ACI) is as important as your human-computer interface (HCI). Poorly specified tools are a leading cause of agent failure.</span></li>
+        <li><span class="t-badge">05</span><span><strong>Agents amplify both capability and cost.</strong> Their autonomy makes them powerful for open-ended tasks in trusted environments, but errors compound across turns. Always test in sandboxed environments with appropriate guardrails.</span></li>
+        <li><span class="t-badge">06</span><span><strong>Prefer direct API calls over frameworks in production.</strong> Frameworks speed up prototyping but obscure prompts and responses, making debugging harder. Reduce abstraction as you move toward production.</span></li>
+        <li><span class="t-badge">07</span><span><strong>Three principles for reliable agents: simplicity, transparency, thorough tool documentation.</strong> Agents that show their planning steps are easier to trust, debug, and improve.</span></li>
+      </ol>
+    </section>
+
+    <!-- ════════ OVERVIEW ════════ -->
+    <section id="overview">
+      <h2>Overview</h2>
+      <p>This tutorial distills Anthropic's practical guidance for building AI agents — drawn from working with dozens of teams across industries deploying LLMs in production. The central thesis: <strong>the most successful agent implementations use simple, composable patterns, not complex frameworks</strong>.</p>
+      <p>The article covers when to use agents at all, five workflow patterns that handle most production needs, a framework for thinking about full autonomous agents, and often-overlooked advice on tool design. It also includes two real-world appendices on customer support and coding agents.</p>
+      <p>After this tutorial you will understand: the difference between workflows and agents, when each pattern is the right tool, how to design robust tool interfaces, and the three principles that make agents reliable in production.</p>
+    </section>
+
+    <!-- ════════ PREREQUISITES ════════ -->
+    <section id="prerequisites">
+      <h2>Prerequisites</h2>
+      <ul>
+        <li>Familiarity with LLM API calls (sending prompts, receiving completions).</li>
+        <li>Basic understanding of tool use / function calling in LLMs.</li>
+        <li>Some experience building or prototyping an AI feature.</li>
+      </ul>
+      <p><strong>No specific framework or language required.</strong> All patterns are framework-agnostic; code snippets are illustrative Python.</p>
+    </section>
+
+    <!-- ════════ 1. BACKGROUND ════════ -->
+    <section id="background">
+      <h2>1. Background &amp; Motivation</h2>
+      <p>LLMs have matured rapidly from single-turn text generators into systems capable of multi-step reasoning, tool use, and environmental interaction. But with that power comes an industry-wide temptation to over-engineer: adding orchestration frameworks, specialized libraries, and complex routing logic before they're needed.</p>
+      <p>Anthropic observed a consistent pattern across its customer deployments: <strong>teams that started simple and added complexity deliberately outperformed teams that started with elaborate frameworks</strong>. The failures almost always came from complexity that obscured what the model was actually doing.</p>
+      <p>The article exists to name the composable patterns that actually work, give developers a vocabulary for discussing them, and establish a decision framework for when to use each one.</p>
+
+      <div class="callout warn">
+        <div class="callout-title">⚠ The complexity trap</div>
+        <p>Frameworks abstract away prompts and responses. That makes them easy to start with — and hard to debug when something goes wrong. Incorrect assumptions about what's "under the hood" are a leading source of production failures.</p>
+      </div>
+    </section>
+
+    <!-- ════════ 2. CORE CONCEPTS ════════ -->
+    <section id="core-concepts">
+      <h2>2. Core Concepts</h2>
+
+      <h3 id="agentic-systems">Agentic Systems</h3>
+      <p>The term "agent" means different things to different teams. Anthropic's umbrella term is <strong>agentic systems</strong>: any system where an LLM takes actions beyond producing a single response — calling tools, reading from memory, modifying external state, or chaining multiple LLM calls.</p>
+
+      <h3 id="workflows-vs-agents">Workflows vs Agents</h3>
+      <p>Within agentic systems, the most important architectural distinction is:</p>
+      <table>
+        <thead><tr><th>Type</th><th>Who controls execution?</th><th>Use when</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Workflow</strong></td>
+            <td>Predefined code paths — the developer decides the steps and their order at design time.</td>
+            <td>The task can be cleanly decomposed; you want predictability and consistency.</td>
+          </tr>
+          <tr>
+            <td><strong>Agent</strong></td>
+            <td>The LLM dynamically decides what to do next based on its current context.</td>
+            <td>The required steps can't be predicted in advance; you need flexibility and model-driven decisions at scale.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout note">
+        <div class="callout-title">📌 Start with neither</div>
+        <p>For many tasks, a well-optimized single LLM call with retrieval and in-context examples is sufficient. Build upward from there only when you have evidence that it's not enough.</p>
+      </div>
+
+      <h3 id="augmented-llm">The Augmented LLM — The Core Building Block</h3>
+      <p>Every pattern in this article builds on a single foundational unit: an LLM enhanced with three augmentations.</p>
+
+      <div class="mermaid">
+graph LR
+  U([User / System]) --> LLM[LLM]
+  LLM --> T[Tools\ne.g. search, code exec, APIs]
+  LLM --> M[Memory\nshort-term context + long-term storage]
+  LLM --> R[Retrieval\nRAG / vector search]
+  T --> LLM
+  M --> LLM
+  R --> LLM
+      </div>
+
+      <table>
+        <thead><tr><th>Augmentation</th><th>What it provides</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Tools</strong></td><td>Ability to take actions in external systems</td><td>Web search, code execution, database writes</td></tr>
+          <tr><td><strong>Memory</strong></td><td>Persistence across turns (short-term) and sessions (long-term)</td><td>Conversation history, user profile store</td></tr>
+          <tr><td><strong>Retrieval</strong></td><td>Access to external knowledge at inference time</td><td>RAG over a knowledge base, file system reads</td></tr>
+        </tbody>
+      </table>
+
+      <p>The Model Context Protocol (MCP) is Anthropic's open standard for wiring up tools and retrieval sources with a single client implementation, enabling a growing ecosystem of third-party integrations.</p>
+    </section>
+
+    <!-- ════════ 3. PATTERNS ════════ -->
+    <section id="patterns">
+      <h2>3. The Five Workflow Patterns (+ Full Agents)</h2>
+      <p>These patterns are composable building blocks. Real systems mix and nest them. The key is choosing the simplest pattern that solves your problem — then stopping there.</p>
+
+      <div class="pattern-grid">
+        <div class="pattern-card"><h4>① Prompt Chaining</h4><p>Sequential steps, each building on the last</p></div>
+        <div class="pattern-card"><h4>② Routing</h4><p>Classify input → direct to specialised handler</p></div>
+        <div class="pattern-card"><h4>③ Parallelization</h4><p>Divide work or run multiple attempts simultaneously</p></div>
+        <div class="pattern-card"><h4>④ Orchestrator-Workers</h4><p>Central LLM dynamically delegates to worker LLMs</p></div>
+        <div class="pattern-card"><h4>⑤ Evaluator-Optimizer</h4><p>Generate → evaluate → refine in a loop</p></div>
+        <div class="pattern-card"><h4>⑥ Full Agents</h4><p>LLM directs its own tool use until task is complete</p></div>
+      </div>
+
+      <!-- ── Prompt Chaining ── -->
+      <h3 id="prompt-chaining">① Prompt Chaining</h3>
+      <p><strong>What it is:</strong> Decompose a task into a fixed sequence of LLM calls, feeding each output into the next. Programmatic "gate" checks can verify intermediate results and abort early if something is off-track.</p>
+
+      <div class="mermaid">
+graph LR
+  I([Input]) --> A[LLM Step 1]
+  A --> G{Gate OK?}
+  G -- Yes --> B[LLM Step 2]
+  G -- No --> E([Error / Retry])
+  B --> C[LLM Step 3]
+  C --> O([Output])
+      </div>
+
+      <p><strong>Trade-off:</strong> Higher accuracy (each step is simpler) at the cost of higher latency (sequential execution).</p>
+
+      <div class="callout tip">
+        <div class="callout-title">✅ Use when</div>
+        <ul>
+          <li>The task cleanly decomposes into ordered subtasks.</li>
+          <li>Intermediate outputs are verifiable (programmatic gate checks make sense).</li>
+          <li>You're willing to trade latency for per-step accuracy.</li>
+        </ul>
+      </div>
+
+      <details>
+        <summary>Real examples</summary>
+        <ul>
+          <li>Generate marketing copy → gate: does it mention all required features? → translate into target language.</li>
+          <li>Write document outline → gate: does outline meet length and structure criteria? → write full document from outline.</li>
+        </ul>
+      </details>
+
+      <!-- ── Routing ── -->
+      <h3 id="routing">② Routing</h3>
+      <p><strong>What it is:</strong> Classify the input (via LLM or a traditional classifier) and direct it to a specialized downstream handler — a different prompt, model, or toolset optimized for that input type.</p>
+
+      <div class="mermaid">
+graph TD
+  I([Input]) --> C[Classifier LLM / model]
+  C --> R1[Handler A\nRefund prompt]
+  C --> R2[Handler B\nTech support prompt]
+  C --> R3[Handler C\nSmall model — simple Q&A]
+      </div>
+
+      <p><strong>Why it matters:</strong> Optimizing a prompt for one type of input often degrades performance on others. Routing lets you maintain separate, specialized prompts without compromising overall quality.</p>
+
+      <div class="callout tip">
+        <div class="callout-title">✅ Use when</div>
+        <ul>
+          <li>Input types are clearly distinct and benefit from different handling.</li>
+          <li>Classification is reliable (high-confidence labels).</li>
+          <li>You want cost-efficiency: route easy/common queries to cheaper models, hard/rare ones to more capable models.</li>
+        </ul>
+      </div>
+
+      <details>
+        <summary>Real examples</summary>
+        <ul>
+          <li>Customer service: route refund requests, technical issues, and general questions to separate prompts and toolsets.</li>
+          <li>Cost tiering: route common questions to Claude Haiku 4.5; route rare, complex questions to Claude Sonnet 4.5.</li>
+        </ul>
+      </details>
+
+      <!-- ── Parallelization ── -->
+      <h3 id="parallelization">③ Parallelization</h3>
+      <p><strong>What it is:</strong> Run multiple LLM calls simultaneously and aggregate results. Two distinct sub-patterns:</p>
+
+      <table>
+        <thead><tr><th>Sub-pattern</th><th>What happens</th><th>When to use</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Sectioning</strong></td>
+            <td>Break the task into independent subtasks; run each in a separate LLM call in parallel.</td>
+            <td>Subtasks are independent. Speed matters. Each aspect benefits from focused attention.</td>
+          </tr>
+          <tr>
+            <td><strong>Voting</strong></td>
+            <td>Run the same task multiple times with different prompts/seeds; aggregate or vote on results.</td>
+            <td>You need high-confidence outputs. False positive/negative tradeoffs matter.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="mermaid">
+graph LR
+  subgraph Sectioning
+    I1([Task]) --> P1[LLM: Part A]
+    I1 --> P2[LLM: Part B]
+    I1 --> P3[LLM: Part C]
+    P1 & P2 & P3 --> AG1[Aggregator]
+  end
+  subgraph Voting
+    I2([Task]) --> V1[LLM: Attempt 1]
+    I2 --> V2[LLM: Attempt 2]
+    I2 --> V3[LLM: Attempt 3]
+    V1 & V2 & V3 --> VT[Vote / Consensus]
+  end
+      </div>
+
+      <div class="callout tip">
+        <div class="callout-title">✅ Use when</div>
+        <ul>
+          <li><strong>Sectioning:</strong> Multiple independent concerns need attention (e.g. content screening + response generation run as separate instances to avoid interference).</li>
+          <li><strong>Voting:</strong> High-stakes decisions where you want multiple "opinions" — e.g. code vulnerability review, content moderation with tunable thresholds.</li>
+        </ul>
+      </div>
+
+      <!-- ── Orchestrator-Workers ── -->
+      <h3 id="orchestrator-workers">④ Orchestrator-Workers</h3>
+      <p><strong>What it is:</strong> A central "orchestrator" LLM receives the task, dynamically decomposes it into subtasks at runtime, dispatches them to "worker" LLMs, and synthesizes the results. The key difference from parallelization: <em>subtasks are not predefined</em> — the orchestrator decides them based on the specific input.</p>
+
+      <div class="mermaid">
+graph TD
+  T([Task]) --> O[Orchestrator LLM]
+  O -- "Subtask A" --> W1[Worker LLM 1]
+  O -- "Subtask B" --> W2[Worker LLM 2]
+  O -- "Subtask C" --> W3[Worker LLM 3]
+  W1 & W2 & W3 --> O
+  O --> R([Result])
+      </div>
+
+      <div class="callout tip">
+        <div class="callout-title">✅ Use when</div>
+        <ul>
+          <li>You can't predict how many subtasks or what kind will be needed at design time.</li>
+          <li>The scope of work varies significantly by input (e.g. a codebase change that might touch 2 files or 20).</li>
+        </ul>
+      </div>
+
+      <details>
+        <summary>Real examples</summary>
+        <ul>
+          <li>Coding products making complex changes across multiple files — the orchestrator decides which files need changes and what kind.</li>
+          <li>Multi-source research tasks where the number and nature of sources to consult depends on the topic.</li>
+        </ul>
+      </details>
+
+      <!-- ── Evaluator-Optimizer ── -->
+      <h3 id="evaluator-optimizer">⑤ Evaluator-Optimizer</h3>
+      <p><strong>What it is:</strong> One LLM generates a response; a second LLM evaluates it against criteria and provides feedback; the first iterates. The loop continues until quality criteria are met or a maximum number of rounds is reached.</p>
+
+      <div class="mermaid">
+graph LR
+  T([Task]) --> G[Generator LLM]
+  G --> E[Evaluator LLM]
+  E -- "Feedback: needs improvement" --> G
+  E -- "Criteria met" --> O([Output])
+      </div>
+
+      <p><strong>The two signs of good fit</strong> (directly from the article):</p>
+      <ol>
+        <li>LLM responses can be demonstrably improved when a human articulates feedback — meaning the feedback signal is real and actionable.</li>
+        <li>The LLM can provide such feedback reliably — meaning the evaluator role is within the model's capability.</li>
+      </ol>
+
+      <div class="callout tip">
+        <div class="callout-title">✅ Use when</div>
+        <ul>
+          <li>Clear evaluation criteria exist and can be expressed to an LLM.</li>
+          <li>Iterative refinement produces measurable value (like polishing a translation or a persuasive essay).</li>
+          <li>You want automatic quality control without human review on every output.</li>
+        </ul>
+      </div>
+
+      <details>
+        <summary>Real examples</summary>
+        <ul>
+          <li>Literary translation: translator LLM produces a draft; evaluator LLM flags nuance misses and cultural gaps; translator revises.</li>
+          <li>Complex research tasks: generator searches and synthesizes; evaluator decides whether additional searches are warranted.</li>
+        </ul>
+      </details>
+
+      <!-- ── Full Agents ── -->
+      <h3 id="full-agents">⑥ Full Agents</h3>
+      <p><strong>What it is:</strong> The LLM runs in an open-ended loop, deciding what tool to call next based on the current state of the environment. It operates until the task is complete, a stopping condition is reached, or it requests human input.</p>
+
+      <div class="mermaid">
+graph TD
+  H([Human / System]) -- "Task + tools" --> A[Agent LLM]
+  A --> TC[Tool Call]
+  TC --> E[Environment\ncode exec / APIs / filesystem]
+  E -- "Result / new state" --> A
+  A -- "Need clarification?" --> H
+  A -- "Task complete / max turns" --> O([Output])
+      </div>
+
+      <p>Agents are typically just LLMs using tools in a loop based on environmental feedback. That simplicity is intentional — the complexity lives in tool design and guardrails, not in the agent loop itself.</p>
+
+      <div class="callout danger">
+        <div class="callout-title">⚠ Costs and risks scale with autonomy</div>
+        <ul>
+          <li>Each turn adds latency and token cost.</li>
+          <li>Errors can compound — a wrong early assumption shapes all subsequent steps.</li>
+          <li>Test extensively in sandboxed environments before production.</li>
+          <li>Include stopping conditions (max iterations) to maintain control.</li>
+        </ul>
+      </div>
+
+      <div class="callout tip">
+        <div class="callout-title">✅ Use when</div>
+        <ul>
+          <li>The number or nature of required steps cannot be predicted at design time.</li>
+          <li>The task is open-ended and benefits from adaptive decision-making.</li>
+          <li>You have sufficient trust in the model's judgment and robust guardrails in place.</li>
+        </ul>
+      </div>
+
+      <details>
+        <summary>Anthropic's own agent implementations</summary>
+        <ul>
+          <li><strong>SWE-bench agent:</strong> Resolves real GitHub issues — edits files, runs tests, iterates — with only the PR description as input.</li>
+          <li><strong>Computer use reference implementation:</strong> Claude controls a computer via screenshots, clicks, and keyboard to accomplish GUI-based tasks.</li>
+        </ul>
+      </details>
+    </section>
+
+    <!-- ════════ 4. TOOL ENGINEERING ════════ -->
+    <section id="tool-engineering">
+      <h2>4. Prompt Engineering Your Tools (ACI)</h2>
+      <p>No matter which pattern you use, tools are central to agentic systems. Anthropic spent <em>more time optimizing tools than the overall prompt</em> when building their SWE-bench agent. Tool definitions and specifications deserve the same care as your main prompts.</p>
+
+      <blockquote>
+        "One rule of thumb is to think about how much effort goes into human-computer interfaces (HCI), and plan to invest just as much effort in creating good <em>agent</em>-computer interfaces (ACI)."
+        <cite>— Building Effective Agents</cite>
+      </blockquote>
+
+      <h3>Format selection principles</h3>
+      <ul>
+        <li><strong>Give the model enough tokens to think</strong> before it writes itself into a corner. Avoid formats that require committing to a value early (e.g. diff chunk headers that need a line count before the new code is written).</li>
+        <li><strong>Keep formats close to natural internet text.</strong> Markdown code blocks are more natural than JSON-escaped strings for code; the model has seen far more of the former.</li>
+        <li><strong>Eliminate formatting overhead.</strong> Don't ask the model to track an accurate line count of thousands of lines, or to escape quotes inside JSON strings it writes.</li>
+      </ul>
+
+      <h3>Tool definition best practices</h3>
+      <table>
+        <thead><tr><th>Practice</th><th>Why it matters</th></tr></thead>
+        <tbody>
+          <tr><td>Include example usage in the description</td><td>Models treat tool docs like they treat docstrings — example input/output is the fastest path to correct use.</td></tr>
+          <tr><td>Document edge cases and input format requirements</td><td>Ambiguous edge cases are where agents fail most often.</td></tr>
+          <tr><td>Clearly distinguish similar tools from each other</td><td>Models get confused when two tools have overlapping scopes and similar names.</td></tr>
+          <tr><td>Poka-yoke (mistake-proof) the arguments</td><td>Change parameter structure so common mistakes become impossible or obvious.</td></tr>
+          <tr><td>Test with many example inputs</td><td>Use a workbench to observe what mistakes the model actually makes, then iterate on the definition.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout example">
+        <div class="callout-title">🔬 War story — absolute vs relative filepaths</div>
+        <p>In the SWE-bench agent, the model made consistent mistakes with tools using relative filepaths after the agent had changed directories. The fix: change the tool to <em>require absolute filepaths</em>. The model then used it flawlessly. One parameter constraint eliminated a whole class of failures.</p>
+      </div>
+
+      <h3>The model's-eye-view test</h3>
+      <p>Read your tool definition as if you were the model. Ask: "Is it obvious how to use this tool from the description and parameters alone, without having to think hard?" If the answer is no, rewrite the definition. A good tool definition includes:</p>
+      <ul>
+        <li>A one-sentence description of what the tool does.</li>
+        <li>Each parameter with its type, purpose, and constraints.</li>
+        <li>At least one example call with expected output.</li>
+        <li>Any edge cases or things to avoid.</li>
+        <li>Clear distinction from any similar tools.</li>
+      </ul>
+    </section>
+
+    <!-- ════════ 5. WORKED EXAMPLES ════════ -->
+    <section id="worked-examples">
+      <h2>5. Worked Examples</h2>
+
+      <h3>A. Customer Support Agent</h3>
+      <p>Customer support is a natural fit for agents because support interactions require both conversation and action — and success is cleanly measurable (was the issue resolved?).</p>
+
+      <details open>
+        <summary>Architecture walkthrough</summary>
+        <p><strong>Pattern used:</strong> Routing (classify query type) + Full Agent (handle the classified query with tools).</p>
+        <ol>
+          <li><strong>Routing layer:</strong> Classify the incoming message — refund request, technical support, general question, escalation.</li>
+          <li><strong>Agent loop for each type:</strong>
+            <ul>
+              <li>Pull customer data, order history, and knowledge base articles via tools.</li>
+              <li>Decide action: answer from knowledge, issue refund, update ticket, escalate.</li>
+              <li>Execute action programmatically; confirm with customer.</li>
+            </ul>
+          </li>
+          <li><strong>Stopping condition:</strong> User-confirmed resolution, or max turns → human handoff.</li>
+        </ol>
+        <p><strong>Why agents add value here:</strong> Conversation flow is inherently variable (the customer might ask follow-ups, dispute a decision, provide new information), so hardcoded workflows break quickly. The agent's ability to adapt its next step based on the customer's reply is essential.</p>
+        <div class="callout note">
+          <div class="callout-title">📌 Business model signal</div>
+          <p>Several companies built on this pattern charge only for <em>successful resolutions</em>. That pricing model is only viable if the agent reliably works — a strong real-world endorsement of the pattern's effectiveness.</p>
+        </div>
+      </details>
+
+      <h3>B. Coding Agent (SWE-bench)</h3>
+      <p>Software development is one of the highest-value domains for agents because code is objectively verifiable: does it run and do the tests pass?</p>
+
+      <details open>
+        <summary>Architecture walkthrough</summary>
+        <p><strong>Pattern used:</strong> Full Agent with evaluator-optimizer-style test feedback loop.</p>
+        <ol>
+          <li><strong>Input:</strong> A GitHub issue or PR description.</li>
+          <li><strong>Agent loop:</strong>
+            <ul>
+              <li>Read relevant files, understand the codebase.</li>
+              <li>Hypothesize a fix; edit the appropriate files.</li>
+              <li>Run the test suite; read the results.</li>
+              <li>If tests fail: diagnose, revise, repeat.</li>
+              <li>If tests pass: verify nothing else broke; submit.</li>
+            </ul>
+          </li>
+          <li><strong>Grounding:</strong> Test results are the ground-truth feedback signal at each step — the agent can't fool itself about whether the fix works.</li>
+        </ol>
+        <p><strong>Key insight:</strong> Human review remains necessary even when tests pass. Tests verify functional correctness; humans verify that the solution fits the broader system design and intent.</p>
+      </details>
+    </section>
+
+    <!-- ════════ 6. KEY INSIGHTS ════════ -->
+    <section id="insights">
+      <h2>6. Key Insights &amp; Takeaways</h2>
+      <ol class="takeaway-list">
+        <li><span class="t-badge">01</span><span><strong>Complexity is a last resort, not a starting point.</strong> Every additional LLM call adds latency, cost, and potential failure modes. Add them only when simpler approaches demonstrably fall short.</span></li>
+        <li><span class="t-badge">02</span><span><strong>The augmented LLM is genuinely powerful on its own.</strong> Before building multi-agent pipelines, exhaust what a single call with good retrieval, tools, and in-context examples can do.</span></li>
+        <li><span class="t-badge">03</span><span><strong>Patterns are not prescriptive.</strong> They're a vocabulary and a starting point. Real systems mix, nest, and customize them. Measure performance and iterate.</span></li>
+        <li><span class="t-badge">04</span><span><strong>Tool quality is often the binding constraint.</strong> Anthropic spent more time on tool definitions than on the agent prompt in their SWE-bench implementation. Treat tool engineering as first-class work.</span></li>
+        <li><span class="t-badge">05</span><span><strong>Human oversight is not optional for high-stakes agents.</strong> Checkpoints, max-iteration stops, and sandboxed testing are not just best practices — they're the difference between a useful agent and a runaway one.</span></li>
+        <li><span class="t-badge">06</span><span><strong>Ground truth from the environment is what makes agents work.</strong> At every step, the agent must observe real feedback — test results, API responses, database state — not just its own reasoning.</span></li>
+      </ol>
+
+      <p>The article closes with three core principles — worth displaying prominently:</p>
+      <div class="principles">
+        <span class="pill">① Simplicity — keep agent design minimal</span>
+        <span class="pill">② Transparency — show planning steps explicitly</span>
+        <span class="pill">③ Tool documentation — thorough ACI engineering</span>
+      </div>
+    </section>
+
+    <!-- ════════ 7. LIMITATIONS ════════ -->
+    <section id="limitations">
+      <h2>7. Limitations &amp; Open Questions</h2>
+      <ul>
+        <li><strong>Pattern selection guidance is qualitative.</strong> The article gives heuristics for when to use each pattern, but no quantitative thresholds. Teams still need to measure and experiment to find the right choice for their use case. <em>[Analysis]</em></li>
+        <li><strong>Multi-agent coordination is not addressed.</strong> The article focuses on single-agent architectures. As systems involve multiple cooperating agents with shared state, new failure modes emerge (race conditions, conflicting decisions, attribution). These are acknowledged but not covered.</li>
+        <li><strong>Error recovery is underspecified.</strong> The article recommends sandboxed testing and guardrails but doesn't describe concrete patterns for error detection, rollback, or graceful degradation inside an agent loop. <em>[Analysis: this is likely intentional given the post's scope]</em></li>
+        <li><strong>Framework advice may age quickly.</strong> The specific frameworks listed (Claude Agent SDK, Strands, Rivet, Vellum) and the advice to prefer direct API calls were accurate as of December 2024. The ecosystem evolves fast.</li>
+        <li><strong>The "simplest solution first" principle requires measurement.</strong> Without evals, teams can't know when a simpler solution is "good enough." This post pairs naturally with Anthropic's evals guide, which provides the measurement infrastructure this principle assumes. <em>[Analysis]</em></li>
+      </ul>
+    </section>
+
+    <!-- ════════ 8. GLOSSARY ════════ -->
+    <section id="glossary">
+      <h2>8. Glossary</h2>
+      <details open>
+        <summary>Expand glossary (A–Z)</summary>
+        <table>
+          <thead><tr><th>Term</th><th>Definition</th></tr></thead>
+          <tbody>
+            <tr><td><strong>ACI (Agent-Computer Interface)</strong></td><td>The set of tool definitions, parameter schemas, and documentation that mediates between an agent and the systems it controls. Analogous to HCI for humans.</td></tr>
+            <tr><td><strong>Agentic system</strong></td><td>Any system where an LLM takes actions beyond producing a single response — calling tools, chaining calls, modifying state, or maintaining memory across turns.</td></tr>
+            <tr><td><strong>Agent (strict definition)</strong></td><td>An agentic system where the LLM dynamically directs its own process and tool usage, rather than following a predefined code path.</td></tr>
+            <tr><td><strong>Augmented LLM</strong></td><td>An LLM enhanced with tools, memory, and retrieval — the foundational building block of all agentic patterns.</td></tr>
+            <tr><td><strong>Evaluator-optimizer</strong></td><td>A workflow where one LLM generates output and a second evaluates it, looping until quality criteria are met.</td></tr>
+            <tr><td><strong>Gate</strong></td><td>A programmatic check in a prompt chaining workflow that verifies an intermediate output meets criteria before passing it to the next step.</td></tr>
+            <tr><td><strong>Ground truth</strong></td><td>Real environmental feedback (test results, API responses, database state) that the agent uses to assess its own progress — as opposed to self-generated reasoning.</td></tr>
+            <tr><td><strong>MCP (Model Context Protocol)</strong></td><td>Anthropic's open standard for connecting LLMs to tools and data sources via a single client implementation.</td></tr>
+            <tr><td><strong>Orchestrator-workers</strong></td><td>A workflow where a central LLM dynamically decomposes a task and delegates subtasks to worker LLMs. Subtasks are determined at runtime, not design time.</td></tr>
+            <tr><td><strong>Parallelization</strong></td><td>Running multiple LLM calls simultaneously. Two sub-patterns: Sectioning (independent subtasks in parallel) and Voting (same task multiple times for consensus).</td></tr>
+            <tr><td><strong>Poka-yoke</strong></td><td>Mistake-proofing a tool's arguments so that common errors are structurally impossible or immediately obvious.</td></tr>
+            <tr><td><strong>Prompt chaining</strong></td><td>A workflow that decomposes a task into sequential LLM calls, each processing the previous one's output, with optional gate checks.</td></tr>
+            <tr><td><strong>Routing</strong></td><td>A workflow that classifies an input and directs it to a specialized handler (different prompt, model, or toolset).</td></tr>
+            <tr><td><strong>Sectioning</strong></td><td>A parallelization sub-pattern where a task is broken into independent subtasks run simultaneously.</td></tr>
+            <tr><td><strong>Stopping condition</strong></td><td>A rule that terminates an agent loop — e.g. task complete, max iterations reached, or confidence below threshold. Critical for preventing runaway agents.</td></tr>
+            <tr><td><strong>Voting</strong></td><td>A parallelization sub-pattern where the same task runs multiple times and results are aggregated or voted on for higher confidence.</td></tr>
+            <tr><td><strong>Workflow (strict definition)</strong></td><td>An agentic system where LLMs and tools are orchestrated through predefined code paths decided at design time.</td></tr>
+          </tbody>
+        </table>
+      </details>
+    </section>
+
+    <!-- ════════ 9. FURTHER READING ════════ -->
+    <section id="further-reading">
+      <h2>9. Further Reading</h2>
+
+      <h3>Cited in the article</h3>
+      <ul>
+        <li><a href="https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents">Demystifying Evals for AI Agents</a> — Anthropic (companion article on how to measure agent quality)</li>
+        <li><a href="https://github.com/modelcontextprotocol">Model Context Protocol (MCP)</a> — Anthropic's open standard for tool/data integrations</li>
+        <li><a href="https://github.com/anthropics/anthropic-cookbook">Anthropic Cookbook</a> — Sample implementations of the patterns described here</li>
+        <li><a href="https://github.com/SWE-bench/SWE-bench">SWE-bench</a> — The software engineering benchmark used to evaluate Anthropic's coding agent</li>
+      </ul>
+
+      <h3>Suggested <em>[Suggested]</em></h3>
+      <ul>
+        <li><a href="https://eugeneyan.com/writing/llm-patterns/">Patterns for Building LLM-based Systems &amp; Products</a> — Eugene Yan. A complementary deep-dive with additional production patterns and failure mode analysis.</li>
+        <li><a href="https://www.anthropic.com/research/claude-character">Claude's Model Card &amp; Usage Policies</a> — Anthropic. Relevant context for the trust and guardrail considerations raised in the agents section.</li>
+      </ul>
+    </section>
+
+    <hr>
+
+    <!-- ════════ APPENDIX QUOTES ════════ -->
+    <section id="quotes">
+      <h2>Appendix: Original Quotes</h2>
+
+      <blockquote>
+        "Consistently, the most successful implementations weren't using complex frameworks or specialized libraries. Instead, they were building with simple, composable patterns."
+        <cite>§ Introduction</cite>
+      </blockquote>
+
+      <blockquote>
+        "We suggest that developers start by using LLM APIs directly: many patterns can be implemented in a few lines of code. If you do use a framework, ensure you understand the underlying code. Incorrect assumptions about what's under the hood are a common source of customer error."
+        <cite>§ Frameworks</cite>
+      </blockquote>
+
+      <blockquote>
+        "It is therefore crucial to design toolsets and their documentation clearly and thoughtfully."
+        <cite>§ Agents</cite>
+      </blockquote>
+
+      <blockquote>
+        "We actually spent more time optimizing our tools than the overall prompt [for SWE-bench]. For example, we found that the model would make mistakes with tools using relative filepaths after the agent had moved out of the root directory. To fix this, we changed the tool to always require absolute filepaths — and we found that the model used this method flawlessly."
+        <cite>§ Appendix 2</cite>
+      </blockquote>
+
+      <blockquote>
+        "Success in the LLM space isn't about building the most sophisticated system. It's about building the <em>right</em> system for your needs."
+        <cite>§ Summary</cite>
+      </blockquote>
+    </section>
+
+  </main>
+</div>
+
+<footer class="page-footer">
+  <div style="max-width:1200px;margin:0 auto;padding:0 1rem;">
+    Source: <a href="https://www.anthropic.com/engineering/building-effective-agents">Building Effective Agents</a> — Anthropic Engineering — December 19, 2024<br>
+    Tutorial generated May 25, 2026 by Claude (claude-sonnet-4-6)
+  </div>
+</footer>
+
+</body>
+</html>

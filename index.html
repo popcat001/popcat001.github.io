@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>popcat001 — AI Engineering Notes</title>
+  <meta name="description" content="In-depth tutorials on AI agents, evaluation, and LLM engineering — by popcat001.">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --surface: #f8f9fa;
+      --border: #e1e4e8;
+      --text: #24292e;
+      --text-muted: #6a737d;
+      --accent: #7c3aed;
+      --accent-2: #d97706;
+      --accent-light: #ede9fe;
+      --link: #0550ae;
+      --card-hover: #f3f0ff;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0d1117;
+        --surface: #161b22;
+        --border: #30363d;
+        --text: #e6edf3;
+        --text-muted: #8b949e;
+        --accent: #a78bfa;
+        --accent-2: #fbbf24;
+        --accent-light: #2e1065;
+        --link: #58a6ff;
+        --card-hover: #1e1535;
+      }
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 16px;
+    }
+
+    /* ── Nav ── */
+    nav {
+      border-bottom: 1px solid var(--border);
+      padding: 0.9rem 0;
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      z-index: 10;
+      backdrop-filter: blur(8px);
+    }
+    .nav-inner {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-logo {
+      font-weight: 800;
+      font-size: 1rem;
+      color: var(--text);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+    }
+    .nav-logo span { color: var(--accent); }
+    .nav-links { display: flex; gap: 1.5rem; }
+    .nav-links a { color: var(--text-muted); text-decoration: none; font-size: 0.88rem; transition: color 0.15s; }
+    .nav-links a:hover { color: var(--accent); }
+
+    /* ── Hero ── */
+    .hero {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 5rem 1.5rem 3.5rem;
+    }
+    .hero-tag {
+      display: inline-block;
+      background: var(--accent-light);
+      color: var(--accent);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.7rem;
+      border-radius: 999px;
+      margin-bottom: 1.25rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.9rem, 5vw, 2.75rem);
+      font-weight: 800;
+      line-height: 1.2;
+      letter-spacing: -0.03em;
+      margin-bottom: 1rem;
+    }
+    .hero p {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      max-width: 560px;
+      line-height: 1.65;
+    }
+
+    /* ── Section ── */
+    .section {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 1.5rem 4rem;
+    }
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.6rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ── Tutorial cards ── */
+    .cards { display: grid; gap: 1.25rem; }
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: background 0.15s, border-color 0.15s, transform 0.15s;
+      background: var(--surface);
+    }
+    .card:hover {
+      background: var(--card-hover);
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+    .card-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+    .card-tag {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+    }
+    .tag-purple { background: var(--accent-light); color: var(--accent); }
+    .tag-amber  { background: #fef3c7; color: #d97706; }
+    @media (prefers-color-scheme: dark) {
+      .tag-amber { background: #3d2c0a; color: #fbbf24; }
+    }
+    .card-date { font-size: 0.8rem; color: var(--text-muted); }
+    .card h2 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+      line-height: 1.35;
+    }
+    .card p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.82rem;
+    }
+    .card-stats { display: flex; gap: 1rem; color: var(--text-muted); }
+    .card-read {
+      color: var(--accent);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .card-read::after { content: "→"; }
+
+    /* ── About ── */
+    .about-box {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      background: var(--surface);
+      display: flex;
+      gap: 1.25rem;
+      align-items: flex-start;
+    }
+    .avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--accent-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      flex-shrink: 0;
+    }
+    .about-text h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.3rem; }
+    .about-text p { font-size: 0.88rem; color: var(--text-muted); line-height: 1.6; }
+    .about-links { display: flex; gap: 1rem; margin-top: 0.75rem; }
+    .about-links a { font-size: 0.82rem; color: var(--link); text-decoration: none; font-weight: 600; }
+    .about-links a:hover { text-decoration: underline; }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem 1.5rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.82rem;
+    }
+
+    @media print {
+      nav { position: static; }
+    }
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.25rem 2rem; }
+      .section { padding: 0 1.25rem 3rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" href="/">popcat<span>001</span></a>
+    <div class="nav-links">
+      <a href="#tutorials">Tutorials</a>
+      <a href="#about">About</a>
+      <a href="https://github.com/popcat001" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-tag">AI Engineering Notes</div>
+  <h1>Deep dives on building<br>with AI agents.</h1>
+  <p>In-depth tutorials on LLM architecture, agent evaluation, and production patterns — drawn from Anthropic's engineering research.</p>
+</section>
+
+<section class="section" id="tutorials">
+  <div class="section-label">Tutorials</div>
+  <div class="cards">
+
+    <a class="card" href="building-effective-agents-tutorial.html">
+      <div class="card-meta">
+        <span class="card-tag tag-purple">Agents</span>
+        <span class="card-date">Dec 19, 2024 · Anthropic Engineering</span>
+      </div>
+      <h2>Building Effective Agents</h2>
+      <p>A practical, pattern-driven guide to designing agentic AI systems — from the simplest augmented LLM call to fully autonomous agents. Covers five composable workflow patterns, tool engineering (ACI), and three core principles for reliable production agents.</p>
+      <div class="card-footer">
+        <div class="card-stats">
+          <span>25 min read</span>
+          <span>6 patterns</span>
+          <span>Mermaid diagrams</span>
+        </div>
+        <span class="card-read">Read</span>
+      </div>
+    </a>
+
+    <a class="card" href="demystifying-evals-ai-agents-tutorial.html">
+      <div class="card-meta">
+        <span class="card-tag tag-amber">Evaluation</span>
+        <span class="card-date">Jan 9, 2026 · Anthropic Engineering</span>
+      </div>
+      <h2>Demystifying Evals for AI Agents</h2>
+      <p>A field-tested guide to evaluating AI agents in production. Covers grader types (code-based vs LLM-based vs human), evaluation patterns for coding, conversational, research, and computer-use agents, pass@k vs pass^k metrics, and an 8-step roadmap from zero evals to a trusted eval suite.</p>
+      <div class="card-footer">
+        <div class="card-stats">
+          <span>30 min read</span>
+          <span>8-step roadmap</span>
+          <span>YAML examples</span>
+        </div>
+        <span class="card-read">Read</span>
+      </div>
+    </a>
+
+  </div>
+</section>
+
+<section class="section" id="about">
+  <div class="section-label">About</div>
+  <div class="about-box">
+    <div class="avatar">🤖</div>
+    <div class="about-text">
+      <h3>popcat001</h3>
+      <p>Writing in-depth notes on AI engineering, agent systems, and LLM evaluation. Content is based on primary sources from Anthropic, OpenAI, and other frontier AI labs — with practical commentary on what matters for production systems.</p>
+      <div class="about-links">
+        <a href="https://github.com/popcat001" target="_blank" rel="noopener">GitHub</a>
+        <a href="mailto:xianwu@adobe.com">Contact</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>popcat001 · Built with GitHub Pages · <a href="https://github.com/popcat001/popcat001.github.io">View source</a></p>
+</footer>
+
+</body>
+</html>
