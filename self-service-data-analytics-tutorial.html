@@ -271,6 +271,13 @@
 <p>Every answer states which source tier it came from (<code>semantic layer › curated reference › raw table</code>), how fresh the data is, and who owns the model — so users can gauge trust at a glance.</p>
 <h4>Correction harvesting</h4>
 <blockquote><p>"A scheduled agent scans stakeholder channels every few hours for similar correction language, drafts a one-line fix to the relevant reference doc, and opens a PR tagged to the domain owner."</p></blockquote>
+<h4>Other best practices</h4>
+<ul>
+  <li><strong>Store eval results as telemetry.</strong> Track each run with its version / commit SHA / model, so accuracy regressions can be traced back to the exact change that caused them.</li>
+  <li><strong>Gate announcements per domain.</strong> Don't advertise a domain to users until it clears a quality bar — roughly <strong>~90% accuracy</strong> — so trust is earned domain by domain rather than promised all at once.</li>
+  <li><strong>Build dozens of evals per topic, but no more.</strong> A few dozen per topic captures most of the signal; beyond that there are diminishing returns, so effort is better spent adding new domains than over-testing covered ones.</li>
+  <li><strong>Watch for negative iterations.</strong> Refinement isn't monotonic — they hit "three consecutive net-negative iterations" where docs got longer, not better. Measure every change against the eval set instead of assuming more is better.</li>
+</ul>
 
 <h3>Keeping skills from going stale</h3>
 <ul>
