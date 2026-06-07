@@ -19,6 +19,11 @@ import subprocess
 # ── Metadata extraction ────────────────────────────────────────────────────
 
 def extract_title(html):
+    # Prefer the <h1> — it's the real article title
+    m = re.search(r'<h1[^>]*>(.*?)</h1>', html, re.IGNORECASE | re.DOTALL)
+    if m:
+        text = re.sub(r'<[^>]+>', '', m.group(1))
+        return re.sub(r'\s+', ' ', text).strip()
     m = re.search(r'<title>(.*?)</title>', html, re.IGNORECASE)
     if not m:
         return None
@@ -38,23 +43,31 @@ def extract_description(html):
         text = re.sub(r'\s+', ' ', text).strip()
         if len(text) > 30:
             return text
+    # Fall back to the first key-takeaway bullet as a summary
+    m = re.search(r'<li><strong>([^<]+)</strong>\s*(.*?)</li>', html, re.DOTALL)
+    if m:
+        text = re.sub(r'<[^>]+>', '', m.group(1) + ' ' + m.group(2))
+        text = re.sub(r'\s+', ' ', text).strip()
+        if len(text) > 30:
+            return text[:200].rsplit(' ', 1)[0] + '…' if len(text) > 200 else text
     return None
 
 def extract_date(html):
     """Return (display_str, YYYY-MM-DD sort_key) or (None, None)."""
-    m = re.search(r'Published:\s*([A-Za-z]+ \d{1,2},\s*\d{4})', html)
+    m = re.search(r'(?:Published|Date):\s*([A-Za-z]+ \d{1,2},?\s*\d{4})', html)
     if m:
         raw = m.group(1).strip()
-        try:
-            from datetime import datetime
-            dt = datetime.strptime(raw, '%B %d, %Y')
-            return dt.strftime('%b %d, %Y'), dt.strftime('%Y-%m-%d')
-        except ValueError:
-            pass
+        from datetime import datetime
+        for fmt in ('%B %d, %Y', '%B %d %Y'):
+            try:
+                dt = datetime.strptime(raw, fmt)
+                return dt.strftime('%b %d, %Y'), dt.strftime('%Y-%m-%d')
+            except ValueError:
+                pass
     return None, None
 
 def extract_read_time(html):
-    m = re.search(r'Estimated read time:\s*(\d+)\s*min', html)
+    m = re.search(r'Estimated read time:\s*~?(\d+)\s*min', html)
     if m:
         return m.group(1) + ' min read'
     return None

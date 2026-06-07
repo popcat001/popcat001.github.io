@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Self-Service Data Analytics with Claude — In-Depth Tutorial</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #5c5c5c;
+    --accent: #c2410c;
+    --accent-soft: #fff1ea;
+    --border: #e5e5e5;
+    --code-bg: #f6f6f4;
+    --note-bg: #eff6ff;
+    --note-border: #3b82f6;
+    --warn-bg: #fef3c7;
+    --warn-border: #d97706;
+    --ex-bg: #ecfdf5;
+    --ex-border: #059669;
+    --max: 760px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16171a;
+      --fg: #e6e6e6;
+      --muted: #9aa0a6;
+      --accent: #fb923c;
+      --accent-soft: #2a1c12;
+      --border: #2c2e33;
+      --code-bg: #1e1f23;
+      --note-bg: #15233a;
+      --note-border: #3b82f6;
+      --warn-bg: #332810;
+      --warn-border: #d97706;
+      --ex-bg: #112a20;
+      --ex-border: #059669;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.65;
+    margin: 0;
+    font-size: 17px;
+  }
+  .layout { display: flex; gap: 2rem; max-width: 1120px; margin: 0 auto; padding: 0 1.25rem; }
+  nav.toc {
+    position: sticky; top: 0; align-self: flex-start;
+    height: 100vh; overflow-y: auto;
+    width: 240px; flex: 0 0 240px;
+    padding: 2rem 0.5rem 2rem 0;
+    border-right: 1px solid var(--border);
+    font-size: 0.85rem;
+  }
+  nav.toc h2 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 0.75rem; }
+  nav.toc a { display: block; color: var(--muted); text-decoration: none; padding: 0.25rem 0; border-left: 2px solid transparent; padding-left: 0.6rem; }
+  nav.toc a:hover { color: var(--accent); border-left-color: var(--accent); }
+  main { max-width: var(--max); min-width: 0; padding: 2rem 0 5rem; flex: 1; }
+  header.doc { border-bottom: 2px solid var(--border); padding-bottom: 1.25rem; margin-bottom: 1.5rem; }
+  header.doc h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 0.5rem; }
+  .meta { color: var(--muted); font-size: 0.9rem; }
+  h2 { font-size: 1.5rem; margin-top: 2.75rem; padding-top: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.3rem; }
+  h3 { font-size: 1.18rem; margin-top: 1.75rem; color: var(--accent); }
+  h4 { font-size: 1.02rem; margin-top: 1.25rem; margin-bottom: 0.3rem; }
+  a { color: var(--accent); }
+  code { background: var(--code-bg); padding: 0.12em 0.38em; border-radius: 4px; font-size: 0.88em; font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.1rem; overflow-x: auto; line-height: 1.5; }
+  pre code { background: none; padding: 0; font-size: 0.85rem; }
+  blockquote { margin: 1.2rem 0; padding: 0.6rem 1.1rem; border-left: 4px solid var(--accent); background: var(--accent-soft); border-radius: 0 6px 6px 0; color: var(--fg); }
+  blockquote p { margin: 0.3rem 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1.2rem 0; font-size: 0.92rem; }
+  th, td { border: 1px solid var(--border); padding: 0.55rem 0.7rem; text-align: left; vertical-align: top; }
+  th { background: var(--code-bg); }
+  .callout { border-radius: 8px; padding: 0.85rem 1.1rem; margin: 1.3rem 0; border-left: 4px solid; }
+  .callout p:first-child { margin-top: 0; }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout .label { font-weight: 700; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 0.3rem; }
+  .note { background: var(--note-bg); border-color: var(--note-border); }
+  .warning { background: var(--warn-bg); border-color: var(--warn-border); }
+  .example { background: var(--ex-bg); border-color: var(--ex-border); }
+  .takeaways { background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 10px; padding: 0.5rem 1.4rem; }
+  details { border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 1rem; margin: 1rem 0; background: var(--code-bg); }
+  summary { font-weight: 600; cursor: pointer; }
+  .diagram { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.1rem; overflow-x: auto; }
+  .diagram pre { background: none; border: none; padding: 0; margin: 0; }
+  footer.doc { margin-top: 4rem; border-top: 1px solid var(--border); padding-top: 1rem; color: var(--muted); font-size: 0.85rem; }
+  .pill { display: inline-block; background: var(--accent); color: #fff; font-size: 0.72rem; font-weight: 700; padding: 0.1rem 0.5rem; border-radius: 999px; vertical-align: middle; }
+  @media (max-width: 900px) {
+    nav.toc { display: none; }
+    .layout { display: block; }
+  }
+  @media print {
+    nav.toc { display: none; }
+    .layout { display: block; }
+    body { font-family: Georgia, "Times New Roman", serif; font-size: 12pt; color: #000; background: #fff; }
+    details[open], details { } details:not([open]) > *:not(summary) { display: revert; }
+    details > summary { list-style: none; }
+    a { color: #000; text-decoration: underline; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc">
+  <h2>Contents</h2>
+  <a href="#takeaways">🎯 Key Takeaways</a>
+  <a href="#overview">Overview</a>
+  <a href="#prereqs">Prerequisites</a>
+  <a href="#background">1. Background &amp; Motivation</a>
+  <a href="#concepts">2. Core Concepts</a>
+  <a href="#walkthrough">3. Detailed Walkthrough</a>
+  <a href="#example">4. Worked Example</a>
+  <a href="#insights">5. Deeper Insights</a>
+  <a href="#limits">6. Limitations &amp; Open Qs</a>
+  <a href="#glossary">7. Glossary</a>
+  <a href="#reading">8. Further Reading</a>
+  <a href="#quotes">Appendix: Quotes</a>
+</nav>
+
+<main>
+<header class="doc">
+  <h1>How Anthropic Enables Self-Service Data Analytics with Claude</h1>
+  <p class="meta">
+    Source: <a href="https://claude.com/blog/how-anthropic-enables-self-service-data-analytics-with-claude">claude.com/blog</a><br>
+    Authors: Chen Chang, Clement Peng, Justin Leder, Johanne Jiao, Josh Cherry (Data Science &amp; Data Engineering)<br>
+    Date: June 3, 2026 · Estimated read time: ~18 min
+  </p>
+</header>
+
+<section id="takeaways">
+<h2>🎯 Key Takeaways</h2>
+<div class="takeaways">
+<ul>
+  <li><strong>The hard problem is ambiguity resolution, not SQL generation.</strong> An analytics agent fails because it can't reliably map a vague question to the <em>specific, up-to-date</em> data entity that answers it — not because it can't write a query.</li>
+  <li><strong>Anthropic automates 95% of its business-analytics queries through Claude at ~95% aggregate accuracy.</strong> Adding structured "Skills" took accuracy from a <strong>21% baseline to consistently above 95%</strong>, and ~99% in some domains.</li>
+  <li><strong>Structure beats raw access.</strong> Giving Claude grep access to thousands of SQL files changed accuracy by <strong>less than one point</strong>. The bottleneck is structural mapping, not information availability.</li>
+  <li><strong>"Data is not software."</strong> Code either compiles or fails; an analytics answer can look perfect and be silently wrong. There are no built-in guardrails, so correctness must be engineered through governance and validation.</li>
+  <li><strong>A four-layer stack does the work:</strong> Data Foundations → Sources of Truth → Skills → Validation. Each layer targets one of three failure modes.</li>
+  <li><strong>Generate docs with Claude, but let a human own the definition.</strong> Metrics live in a semantic layer so every surface in the company returns the same number.</li>
+  <li><strong>Start small:</strong> a few canonical datasets, a few dozen offline evals, and one thin knowledge skill capture most of the upside before you build the rest.</li>
+  <li><strong>Treat skill maintenance as a first-class citizen.</strong> Colocate skill markdown files in the same repo as the transformation models, so the PR that changes a model is the same PR that updates the doc describing it — this is how the docs stay in sync instead of silently going stale.</li>
+  <li><strong>Treat query history as raw material for curation, not a source the agent reads directly.</strong> Historical SQL from dashboards and notebooks <em>looks</em> like the highest-value asset, but raw retrieval over thousands of prior queries moved accuracy &lt;1 point — unstructured retrieval can't map a new question to the right precedent. Distill it into structured per-domain reference docs and reusable patterns instead.</li>
+</ul>
+</div>
+</section>
+
+<section id="overview">
+<h2>Overview</h2>
+<p>This piece explains how Anthropic's data team built a system that lets non-experts ask business questions in plain language and get trustworthy answers from Claude — without a data scientist in the loop. The central insight is that reliable LLM analytics is an <em>ambiguity problem</em>: the model must connect a fuzzy human question to the one correct, current entity in a sprawling data model. The team solves this with a four-layer architecture and a heavy emphasis on validation. After reading, you'll understand each layer, why each exists, the experiments that proved what mattered (and what didn't), and how to start building a smaller version yourself.</p>
+</section>
+
+<section id="prereqs">
+<h2>Prerequisites</h2>
+<ul>
+  <li><strong>Basic data warehousing:</strong> tables, columns, joins, and what a SQL query does.</li>
+  <li><strong>Dimensional modeling</strong> — organizing data into fact tables (events/measurements) and dimension tables (descriptive attributes). <em>Canonical dataset</em> = a single, governed, authoritative table for a concept.</li>
+  <li><strong>Semantic layer</strong> — a place where business metrics ("active users," "revenue") are defined once in code, so any tool calling that definition returns the same number.</li>
+  <li><strong>Data lineage</strong> — the dependency graph showing how raw tables are transformed into downstream models.</li>
+  <li><strong>LLM agent &amp; "Skills"</strong> — an agent is an LLM that can call tools and take multi-step actions; in Claude Code, a <em>Skill</em> is a folder of procedural knowledge that tells the agent <em>how</em> to perform a task.</li>
+</ul>
+</section>
+
+<section id="background">
+<h2>1. Background &amp; Motivation</h2>
+<p>Every company wants self-service analytics — but the common approaches each break in a specific way:</p>
+<table>
+  <tr><th>Approach</th><th>Failure</th></tr>
+  <tr><td>Broad data access for everyone</td><td>Inconsistent metric definitions and confusion — five people compute "active users" five different ways.</td></tr>
+  <tr><td>Locked-down dashboards only</td><td>Misses real business questions; metrics multiply to cover every case ("metric bloat").</td></tr>
+  <tr><td>LLM analytics agent</td><td>Risks confident-but-wrong answers when users lack the infrastructure knowledge to validate them.</td></tr>
+</table>
+<p>Anthropic frames the root cause precisely:</p>
+<blockquote><p>"The central problem comes down to our ability to map a user's question to specific and up-to-date entities in our data model."</p></blockquote>
+<p>They identify <strong>three failure modes</strong> that account for "an overwhelming majority of inaccurate responses." The whole architecture is organized around defeating these three:</p>
+<table>
+  <tr><th>Failure mode</th><th>What goes wrong</th></tr>
+  <tr><td><strong>Concept ↔ Entity ambiguity</strong></td><td>One concept ("active users") maps to hundreds of plausible data options. The agent picks a wrong-but-believable one.</td></tr>
+  <tr><td><strong>Data staleness</strong></td><td>Schemas and definitions change constantly; yesterday's correct answer is today's subtle error.</td></tr>
+  <tr><td><strong>Retrieval failure</strong></td><td>The right information exists, but the agent can't find it in a vast search space.</td></tr>
+</table>
+</section>
+
+<section id="concepts">
+<h2>2. Core Concepts</h2>
+
+<h3>The four-layer stack</h3>
+<p>The architecture stacks four layers, each building on the one below. Foundations make the data trustworthy; Sources of Truth make the right answer <em>exist</em>; Skills make it <em>findable</em>; Validation makes it <em>verifiable</em> and catches drift.</p>
+<div class="diagram">
+<pre>
+        ┌──────────────────────────────────────────────┐
+        │  4. VALIDATION                                 │
+        │  offline evals · ablation · adversarial review │
+        │  provenance footers · correction harvesting    │
+        ├──────────────────────────────────────────────┤
+        │  3. SKILLS  (procedural "how-to")              │
+        │  knowledge skills (routers) + unbook skills    │
+        ├──────────────────────────────────────────────┤
+        │  2. SOURCES OF TRUTH  (priority order)         │
+        │  semantic layer › lineage › query corpus ›     │
+        │  business context                              │
+        ├──────────────────────────────────────────────┤
+        │  1. DATA FOUNDATIONS                           │
+        │  dimensional models · canonical datasets ·     │
+        │  CI enforcement · metadata as a product        │
+        └──────────────────────────────────────────────┘
+   targets →  ambiguity · staleness · retrieval failure
+</pre>
+</div>
+
+<h3>Canonical dataset</h3>
+<p><strong>Definition:</strong> a single governed table designated as the authoritative source for a concept. <strong>Why it matters:</strong> it collapses "hundreds of plausible options" down to one, directly attacking concept-entity ambiguity. <strong>Enforced</strong> through tooling, CI checks, and mandate, with all data code colocated in unified repositories.</p>
+
+<h3>Semantic layer</h3>
+<p><strong>Definition:</strong> compiled metric definitions — the highest-priority source of truth. <strong>Why it matters:</strong></p>
+<blockquote><p>"If a question maps cleanly to a defined metric, the agent calls a function and gets one number, the same number every other surface in the company produces."</p></blockquote>
+<div class="callout note"><span class="label">Note</span><p>Division of labor: <em>"we recommend generating the documentation with Claude, but having a human own the definition."</em> Claude drafts; a human is accountable for what the metric means.</p></div>
+
+<h3>Skills: two types</h3>
+<p>Skills encode <em>how</em> to navigate ambiguity and run analyses correctly — procedural knowledge, not facts.</p>
+<h4>Knowledge skills (thin routers)</h4>
+<p>They "allow additional domain details to load on demand" — consulting the semantic layer first, then narrowing to "~30 reference files for this domain describing the relevant tables, columns, joins and gotchas." This keeps the agent from drowning in context: load only what the question needs.</p>
+<h4>Unbook skills (analyst workflows)</h4>
+<p>They encode a senior analyst's process: <em>"clarify the question, find sources (via the knowledge skill), run the query, and then loop the result through adversarial review sub-agents."</em> They also bundle reusable analysis patterns like <strong>retention curves</strong> and <strong>funnel analysis</strong>.</p>
+<div class="callout example"><span class="label">Impact</span><p>Without skills, Claude scored <strong>21%</strong> on analytics questions. With them, accuracy was "consistently above 95% in aggregate and regularly around 99% in certain domains."</p></div>
+</section>
+
+<section id="walkthrough">
+<h2>3. Detailed Walkthrough</h2>
+
+<h3>Layer 1 — Data Foundations</h3>
+<ul>
+  <li>Dimensional modeling and standard data-engineering hygiene.</li>
+  <li>Canonical datasets reduce ambiguity to single governed sources.</li>
+  <li>Enforcement via tooling, CI checks, and mandate — not good intentions.</li>
+  <li>All data code colocated in unified repositories.</li>
+  <li>Metadata treated as a first-class product, not an afterthought.</li>
+</ul>
+
+<h3>Layer 2 — Sources of Truth (a priority decision tree)</h3>
+<p>The agent walks these in order; each step is a fallback for when the previous one can't answer.</p>
+<table>
+  <tr><th>#</th><th>Source</th><th>How it's used</th></tr>
+  <tr><td>1</td><td><strong>Semantic layer</strong> (mandatory first)</td><td>If the question maps to a defined metric, call the function → one canonical number.</td></tr>
+  <tr><td>2</td><td><strong>Lineage &amp; transformation graph</strong></td><td>When no metric exists, lineage turns <em>"I don't know the metric"</em> into <em>"I know which governed model to aggregate from."</em></td></tr>
+  <tr><td>3</td><td><strong>Query corpus</strong></td><td>Historical SQL — but <em>distilled into structured reference docs and reusable patterns</em>, because raw retrieval failed (see below).</td></tr>
+  <tr><td>4</td><td><strong>Business context</strong></td><td>Knowledge graphs, roadmaps, org structure. <em>"An agent that doesn't understand your business will answer what the user asked, but not what they meant."</em></td></tr>
+</table>
+<div class="callout warning"><span class="label">Counterintuitive finding</span><p>Raw query access was largely ineffective: <em>"Unstructured retrieval couldn't map a new question to the right precedent."</em> The fix wasn't more data — it was <em>structuring</em> the precedent into reference docs.</p></div>
+
+<h3>Layer 3 — Skills</h3>
+<p>See <a href="#concepts">Core Concepts</a> for the knowledge-vs-unbook distinction. Operationally, skills consult sources in prioritized order, navigate ambiguous data, and recognize analysis patterns — turning the priority tree above into something the agent actually executes.</p>
+
+<h3>Layer 4 — Validation</h3>
+<p>Because "data is not software," correctness has to be measured continuously. Five mechanisms:</p>
+<h4>Offline evaluations</h4>
+<ul>
+  <li><strong>Dashboard-based evals</strong> — auto-generated by Claude, human-validated, covering common questions.</li>
+  <li><strong>Long-tail evals</strong> — Claude generates plausible questions from business context, to cover the rare cases.</li>
+  <li><strong>Stable ground truth</strong>: anchor to a snapshot date, write against a stable fact table, <em>or</em> have the grader judge the agent's <em>query</em> rather than its number (so a changing live number doesn't break the test).</li>
+</ul>
+<h4>Ablation testing</h4>
+<p>Hold the eval set fixed, vary one component, measure the delta. This is how they learned that grep access to thousands of SQL files "moved [accuracy] by less than a point in either direction."</p>
+<h4>Adversarial review</h4>
+<p>A skill that "aggressively challenge[s] all underlying assumptions on a potential final answer" — run as sub-agents. It bought <strong>+6% accuracy</strong> at the cost of <strong>+32% tokens</strong> and <strong>+72% latency</strong>.</p>
+<h4>Provenance footers</h4>
+<p>Every answer states which source tier it came from (<code>semantic layer › curated reference › raw table</code>), how fresh the data is, and who owns the model — so users can gauge trust at a glance.</p>
+<h4>Correction harvesting</h4>
+<blockquote><p>"A scheduled agent scans stakeholder channels every few hours for similar correction language, drafts a one-line fix to the relevant reference doc, and opens a PR tagged to the domain owner."</p></blockquote>
+
+<h3>Keeping skills from going stale</h3>
+<ul>
+  <li>Skill files are <strong>colocated with the transformation models</strong> they describe.</li>
+  <li>Code-review hooks flag unreported model changes.</li>
+  <li><strong>~90% of data-model PRs now include skill updates</strong> — maintenance is built into the normal dev loop.</li>
+</ul>
+</section>
+
+<section id="example">
+<h2>4. Worked Example</h2>
+<p><em>[Analysis] — a faithful illustration built from the article's described mechanics; not a verbatim transcript from the source.</em></p>
+<p><strong>Question from a PM:</strong> "How many active users did we have last month?"</p>
+<ol>
+  <li><strong>Knowledge skill routes</strong> the question to the "engagement" domain and loads only its ~30 reference files.</li>
+  <li><strong>Semantic layer (step 1):</strong> "active users" <em>is</em> a defined metric. The agent calls the function rather than guessing a definition → returns the one canonical number every dashboard uses. (If it weren't defined, it would fall back to lineage to find the governed model to aggregate.)</li>
+  <li><strong>Unbook skill</strong> applies the standard workflow: clarify ("last month" = last full calendar month), run the query, then pass the result through <strong>adversarial review</strong> sub-agents that challenge assumptions ("Did you exclude internal test accounts? Is the month boundary in the right timezone?").</li>
+  <li><strong>Provenance footer</strong> attaches: <code>Source: semantic layer · data fresh as of 2026-05-31 · owner: @growth-data</code>.</li>
+  <li>If the PM later replies "that's too high, it includes bots," <strong>correction harvesting</strong> catches the phrase, drafts a one-line fix to the reference doc, and opens a PR to the domain owner.</li>
+</ol>
+<p>The reference docs each follow a consistent template:</p>
+<pre><code>- Business Context
+- Entity Grain
+- Standard Hygiene Filters
+- Dimensions &amp; Key Tables
+- Gotchas
+- Best Practices / Common Patterns
+- Cross-References</code></pre>
+</section>
+
+<section id="insights">
+<h2>5. Deeper Insights</h2>
+
+<h3>The bottleneck is mapping, not access</h3>
+<p>The single most instructive experiment: direct grep over the entire SQL corpus (thousands of files) changed accuracy by <strong>&lt;1 point</strong>. Lesson: if your agent is wrong, throwing more raw data at it won't help — the problem is connecting the question to the right entity. Invest in structure (canonical datasets, semantic layer, distilled references), not retrieval volume.</p>
+
+<h3>More documentation can make things worse</h3>
+<p>Stacking extra doc refinement produced <em>"three consecutive net-negative iterations: the docs were getting longer, not better."</em> Lesson: there are diminishing — even negative — returns to verbosity. Concise, well-structured references beat exhaustive ones.</p>
+
+<h3>Validation quality depends on model quality</h3>
+<p>Swapping the adversarial reviewer for a cheaper model "lost most of the accuracy wins, for no real speedup." Lesson: the reviewer is doing real cognitive work; don't cut costs there.</p>
+
+<h3>Why "data is not software"</h3>
+<p>In coding, the compiler/tests are a free correctness signal. In analytics, a query runs fine and returns a number that looks plausible but is wrong. There's no inherent guardrail — which is exactly why the validation layer (provenance, evals, adversarial review) has to manufacture one.</p>
+
+<h3>The query corpus is raw material, not a source of truth</h3>
+<p>The historical SQL from dashboards, notebooks, and prior analyses <em>looks</em> like it should be the highest-value asset — it's a record of every question already answered correctly. Intuitively, point the agent at it and let it find precedents. In practice, giving the agent raw retrieval access to thousands of prior queries moved accuracy by <strong>less than a point</strong>: unstructured retrieval couldn't map a new question to the right precedent.</p>
+<p>What <em>does</em> work is distilling that corpus into structured per-domain reference docs and reusable analysis patterns described in skills. The lesson: <strong>treat query history as raw material for curation, not as a source the agent reads directly.</strong> The value is real, but it has to be refined into structure before the agent can use it.</p>
+
+<h3>The unifying principle</h3>
+<blockquote><p>"Our greatest gains have come from addressing each of the three failure modes: collapsing ambiguity into a single governed answer, making the answer easily discoverable, and flagging when either has gone stale."</p></blockquote>
+</section>
+
+<section id="limits">
+<h2>6. Limitations &amp; Open Questions</h2>
+<ul>
+  <li><strong>Presupposes mature data engineering.</strong> <em>[Analysis]</em> The whole stack assumes you can <em>create</em> canonical datasets and a semantic layer with CI enforcement. Many orgs lack this discipline, so the "start small" advice may still be a large lift for them.</li>
+  <li><strong>~95% accuracy still means ~1 in 20 answers is wrong.</strong> <em>[Analysis]</em> The article notes data scientists tolerate more errors than business users — but it doesn't deeply address how end users distinguish the wrong 5% beyond the provenance footer.</li>
+  <li><strong>Cost/latency of high accuracy.</strong> Adversarial review's +32% tokens / +72% latency is a real tax; the piece flags the tradeoff but doesn't give a framework for where to draw the line.</li>
+  <li><strong>Generalization unaddressed.</strong> <em>[Analysis]</em> Results are from Anthropic's own data culture and (presumably) strong models. How much transfers to a weaker model or messier org is an open question.</li>
+  <li><strong>"Human owns the definition" has scaling limits.</strong> <em>[Analysis]</em> As metric count grows, human ownership of every definition could become its own bottleneck.</li>
+</ul>
+</section>
+
+<section id="glossary">
+<h2>7. Glossary</h2>
+<details open>
+<summary>Definitions (alphabetical)</summary>
+<table>
+  <tr><th>Term</th><th>Meaning</th></tr>
+  <tr><td>Ablation testing</td><td>Holding the eval set fixed and varying one component to measure that component's contribution.</td></tr>
+  <tr><td>Adversarial review</td><td>A skill/sub-agent that aggressively challenges the assumptions behind a candidate answer before it's returned.</td></tr>
+  <tr><td>Canonical dataset</td><td>The single governed, authoritative table for a concept.</td></tr>
+  <tr><td>Concept ↔ entity ambiguity</td><td>One business concept mapping to many possible data entities — failure mode #1.</td></tr>
+  <tr><td>Correction harvesting</td><td>A scheduled agent that mines stakeholder channels for corrections and opens fix PRs to reference docs.</td></tr>
+  <tr><td>Dimensional modeling</td><td>Structuring data into fact tables (measurements) and dimension tables (descriptive context).</td></tr>
+  <tr><td>Knowledge skill</td><td>A thin router skill that loads only the relevant domain reference files on demand.</td></tr>
+  <tr><td>Lineage graph</td><td>The dependency graph of how raw data is transformed into downstream models.</td></tr>
+  <tr><td>Offline eval</td><td>A pre-built test (dashboard-based or long-tail) used to measure agent accuracy against known answers.</td></tr>
+  <tr><td>Provenance footer</td><td>Metadata appended to each answer: source tier, data freshness, model owner.</td></tr>
+  <tr><td>Query corpus</td><td>Historical SQL, distilled into structured reference docs (raw retrieval over it proved ineffective).</td></tr>
+  <tr><td>Semantic layer</td><td>Compiled, single-source metric definitions; the highest-priority source of truth.</td></tr>
+  <tr><td>Unbook skill</td><td>A skill encoding a senior analyst's end-to-end workflow and reusable analysis patterns.</td></tr>
+</table>
+</details>
+</section>
+
+<section id="reading">
+<h2>8. Further Reading</h2>
+<ul>
+  <li><a href="https://claude.com/blog/how-anthropic-enables-self-service-data-analytics-with-claude">Original article</a> — Anthropic Data Science &amp; Data Engineering, June 3, 2026.</li>
+  <li><em>[Suggested]</em> Ralph Kimball, <em>The Data Warehouse Toolkit</em> — the canonical reference on dimensional modeling that underpins Layer 1.</li>
+  <li><em>[Suggested]</em> Anthropic's documentation on <strong>Claude Code Skills</strong> — for how the procedural-knowledge "Skills" mechanism works in practice.</li>
+</ul>
+</section>
+
+<section id="quotes">
+<h2>Appendix: Original Quotes</h2>
+<blockquote><p>"The central problem comes down to our ability to map a user's question to specific and up-to-date entities in our data model." <em>(Background)</em></p></blockquote>
+<blockquote><p>"If a question maps cleanly to a defined metric, the agent calls a function and gets one number, the same number every other surface in the company produces." <em>(Semantic layer)</em></p></blockquote>
+<blockquote><p>"We recommend generating the documentation with Claude, but having a human own the definition." <em>(Semantic layer)</em></p></blockquote>
+<blockquote><p>"Unstructured retrieval couldn't map a new question to the right precedent." <em>(Query corpus)</em></p></blockquote>
+<blockquote><p>"A scheduled agent scans stakeholder channels every few hours for similar correction language, drafts a one-line fix to the relevant reference doc, and opens a PR tagged to the domain owner." <em>(Correction harvesting)</em></p></blockquote>
+<blockquote><p>"Our greatest gains have come from addressing each of the three failure modes: collapsing ambiguity into a single governed answer, making the answer easily discoverable, and flagging when either has gone stale." <em>(Conclusion)</em></p></blockquote>
+</section>
+
+<footer class="doc">
+  Tutorial generated June 6, 2026 from the Anthropic blog post. Quotes preserved verbatim; sections marked <em>[Analysis]</em> are interpretation, not from the source.
+</footer>
+</main>
+</div>
+</body>
+</html>
