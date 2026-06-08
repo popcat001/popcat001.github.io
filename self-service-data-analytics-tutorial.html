@@ -114,6 +114,7 @@
 <nav class="toc">
   <h2>Contents</h2>
   <a href="#takeaways">🎯 Key Takeaways</a>
+  <a href="#bestpractices">✅ Best Practices</a>
   <a href="#overview">Overview</a>
   <a href="#prereqs">Prerequisites</a>
   <a href="#background">1. Background &amp; Motivation</a>
@@ -152,6 +153,14 @@
   <li><strong>Treat query history as raw material for curation, not a source the agent reads directly.</strong> Historical SQL from dashboards and notebooks <em>looks</em> like the highest-value asset, but raw retrieval over thousands of prior queries moved accuracy &lt;1 point — unstructured retrieval can't map a new question to the right precedent. Distill it into structured per-domain reference docs and reusable patterns instead.</li>
 </ul>
 </div>
+</section>
+
+<section id="bestpractices">
+<h2>✅ Best Practices</h2>
+<p>A few hard-won lessons. The recurring theme: <strong>human-curated structure beats LLM-generated bulk, and structure only stays correct if you engineer it to.</strong></p>
+<div class="callout example"><span class="label">Do — colocate all data code in one repo</span><p>Their main defense against constantly changing data models and business logic is <strong>colocation</strong>. Nearly all data code — modeling, the semantic layer, reference docs, and canonical dashboard definitions — lives in a <strong>single repo</strong>, with CI checks that protect cross-layer integrity. Because everything sits together, a model change and the updates to the doc, metric, and dashboard that depend on it land in the same PR, and CI catches when one drifts out of sync. In practice, <strong>~90% of data-model PRs now include skill updates</strong> — maintenance is built into the normal dev loop rather than bolted on later.</p></div>
+<div class="callout warning"><span class="label">Don't auto-generate the semantic layer</span><p>Bootstrapping the semantic layer by having an LLM auto-generate metric definitions from raw tables and query logs <strong>doesn't work</strong>. It produced plausible-looking definitions that <em>encoded the very ambiguities they were trying to eliminate</em>, and was net-negative on evals versus a smaller, human-curated layer.<br><strong>Do instead:</strong> let Claude draft, but have a human own each definition. The value of the semantic layer is the human judgment baked into it.</p></div>
+<div class="callout warning"><span class="label">Don't let the agent read the query corpus directly</span><p>Giving the agent raw retrieval access to thousands of prior queries (dashboards, notebooks, past analyses) moved accuracy by <strong>less than a point</strong> — unstructured retrieval couldn't map a new question to the right precedent.<br><strong>Do instead:</strong> distill the query history into structured per-domain reference docs and reusable analysis patterns described in skills. Treat query history as raw material for curation, not a source of truth the agent reads directly.</p></div>
 </section>
 
 <section id="overview">
@@ -238,13 +247,14 @@
 <h2>3. Detailed Walkthrough</h2>
 
 <h3>Layer 1 — Data Foundations</h3>
+<p>Everything above rests on trustworthy, well-modeled data. The foundation isn't glamorous, but skipping it means the higher layers route confidently to the wrong place.</p>
 <ul>
-  <li>Dimensional modeling and standard data-engineering hygiene.</li>
-  <li>Canonical datasets reduce ambiguity to single governed sources.</li>
-  <li>Enforcement via tooling, CI checks, and mandate — not good intentions.</li>
-  <li>All data code colocated in unified repositories.</li>
-  <li>Metadata treated as a first-class product, not an afterthought.</li>
+  <li><strong>Dimensional modeling and standard data-engineering hygiene</strong> — clean fact/dimension models give the agent a predictable structure to reason over.</li>
+  <li><strong>Canonical datasets</strong> reduce ambiguity to single governed sources, so a concept has exactly one authoritative table rather than hundreds of plausible options.</li>
+  <li><strong>Enforcement via tooling, CI checks, and mandate</strong> — governance that's automated and required, not left to good intentions.</li>
+  <li><strong>Metadata treated as a first-class product</strong>, not an afterthought — descriptions, ownership, and grain maintained as deliberately as the data itself.</li>
 </ul>
+<div class="callout note"><span class="label">Key practice — Colocation</span><p><strong>Their main defense against constantly changing data models and business logic is colocation.</strong> Nearly all data code — modeling, the semantic layer, reference docs, and canonical dashboard definitions — lives in a <strong>single repo</strong>, with CI checks that protect cross-layer integrity. Because everything sits together, a model change and the updates to the doc, metric, and dashboard that depend on it land in the same PR, and CI catches when one drifts out of sync.</p></div>
 
 <h3>Layer 2 — Sources of Truth (a priority decision tree)</h3>
 <p>The agent walks these in order; each step is a fallback for when the previous one can't answer.</p>
@@ -255,6 +265,7 @@
   <tr><td>3</td><td><strong>Query corpus</strong></td><td>Historical SQL — but <em>distilled into structured reference docs and reusable patterns</em>, because raw retrieval failed (see below).</td></tr>
   <tr><td>4</td><td><strong>Business context</strong></td><td>Knowledge graphs, roadmaps, org structure. <em>"An agent that doesn't understand your business will answer what the user asked, but not what they meant."</em></td></tr>
 </table>
+<div class="callout warning"><span class="label">What didn't work — auto-generating the semantic layer</span><p>They tried <strong>bootstrapping the semantic layer by having an LLM auto-generate metric definitions from raw tables and query logs.</strong> It produced plausible-looking definitions that <em>encoded the very ambiguities they were trying to eliminate</em>, and was net-negative on evals versus a smaller, human-curated layer. The lesson reinforces the earlier note: Claude can draft documentation, but a human must own the definition — the semantic layer's value is the human judgment baked into it, which an LLM working from messy inputs can't reverse-engineer.</p></div>
 <div class="callout warning"><span class="label">Counterintuitive finding</span><p>Raw query access was largely ineffective: <em>"Unstructured retrieval couldn't map a new question to the right precedent."</em> The fix wasn't more data — it was <em>structuring</em> the precedent into reference docs.</p></div>
 
 <h3>Layer 3 — Skills</h3>
