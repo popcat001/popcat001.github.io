@@ -9,6 +9,7 @@ Personal site hosting in-depth AI engineering tutorials.
 - [Building Effective Agents](building-effective-agents-tutorial.html)
 - [Demystifying Evals for AI Agents](demystifying-evals-ai-agents-tutorial.html)
 - [Self-Service Data Analytics with Claude](self-service-data-analytics-tutorial.html)
+- [How the Claude Code Team Does Code Review](code-review-at-anthropic-tutorial.html)
 
 ## Adding a new article
 
