@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude Ship: Anthropic Wants Claude to Get Your PRs Merged</title>
+<meta name="description" content="Anthropic's Claude Ship beta chains three agents (Code Review, PR Steward, Claude Approvals) to carry a pull request from review to fixes to an approval decision. How each piece works, how to roll it out, and what it costs.">
+<style>
+:root {
+  --bg: #f6f3ee;
+  --paper: #fffcf8;
+  --ink: #1c1917;
+  --muted: #5c574f;
+  --line: #e6e0d6;
+  --accent: #c45c3e;
+  --accent-soft: #f3e3d8;
+  --link: #9a3f28;
+}
+* { box-sizing: border-box; }
+html { font-size: 18px; -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.7;
+  text-rendering: optimizeLegibility;
+}
+.wrap { max-width: 720px; margin: 0 auto; padding: 2.2rem 1.25rem 4rem; }
+.back { margin: 0 0 1.2rem; font-size: 0.9rem; }
+.back a { color: var(--muted); text-decoration: none; }
+.back a:hover { color: var(--link); }
+header.hero { margin-bottom: 2rem; }
+.kicker {
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 0.7rem;
+}
+h1 {
+  font-size: clamp(1.7rem, 4.5vw, 2.2rem);
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.85rem;
+}
+.dek { font-size: 1.08rem; color: var(--muted); margin: 0; }
+h2 {
+  font-size: 1.3rem;
+  line-height: 1.35;
+  margin: 2.6rem 0 0.9rem;
+  letter-spacing: -0.01em;
+}
+p { margin: 0.9rem 0; }
+ul { margin: 0.6rem 0 1rem; padding-left: 1.3rem; }
+li { margin: 0.4rem 0; }
+strong { font-weight: 650; }
+a { color: var(--link); }
+code {
+  font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.86em;
+  background: var(--accent-soft);
+  color: #7a2e1c;
+  padding: 0.08em 0.35em;
+  border-radius: 4px;
+}
+pre {
+  background: #1f1d1b;
+  color: #ece7df;
+  padding: 1rem 1.1rem;
+  border-radius: 10px;
+  overflow-x: auto;
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+.summary {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+  margin: 1.6rem 0 0;
+}
+.summary p:first-child { margin-top: 0; }
+.summary ul { margin-bottom: 0; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  margin: 1rem 0 1.2rem;
+  background: var(--paper);
+}
+th, td { text-align: left; vertical-align: top; padding: 0.6rem 0.7rem; border-bottom: 1px solid var(--line); }
+th { font-weight: 650; background: #efeae3; }
+blockquote {
+  margin: 1.2rem 0;
+  padding: 0.7rem 1rem 0.7rem 1.1rem;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-soft);
+  border-radius: 0 10px 10px 0;
+}
+blockquote p { margin: 0.3rem 0; }
+blockquote .who { font-size: 0.85rem; color: var(--muted); }
+@media (max-width: 540px) {
+  html { font-size: 17px; }
+  .wrap { padding: 1.4rem 1rem 3rem; }
+  table { font-size: 0.8rem; }
+}
+</style>
+</head>
+<body>
+<article class="wrap">
+<header class="hero">
+  <p class="back"><a href="index.html">← All tutorials</a></p>
+  <div class="kicker">Product breakdown · Claude Ship</div>
+  <h1>Claude Ship: Anthropic wants Claude to get your PRs merged, too</h1>
+  <p class="dek">Writing code got fast. Review, fixes and sign-off did not. Claude Ship is Anthropic's attempt to close that gap.</p>
+  <div class="summary">
+    <p><strong>The short version</strong></p>
+    <ul>
+      <li>Claude Ship (beta) is three agents in a row. <strong>Code Review</strong> finds and verifies problems, <strong>PR Steward</strong> fixes them and keeps CI green, and <strong>Claude Approvals</strong> decides whether Claude can approve or a human has to.</li>
+      <li>Approval rules live in a file in your repo, <code>.claude/approvals.yml</code>. You can say "docs need no human once Claude's review passes" and "billing code needs two non-authors, one from payments".</li>
+      <li>PR Steward never approves or merges. Your branch protection still has the final say.</li>
+      <li>It's for Claude Team and Enterprise on GitHub, billed by tokens, with monthly spend caps.</li>
+    </ul>
+  </div>
+</header>
+
+<h2>The problem it's aimed at</h2>
+<p>Boris Cherny, who created Claude Code, says Opus 4.5 was "the first model to write 100% of my code." Getting those changes merged is another matter. In his words, "shipping PRs hasn't caught up."</p>
+<p>The loop is familiar. You open a pull request and move on to the next task. Review comments come back. You stop, reload the old code into your head, push a fix, wait for CI and review to run again, then go find someone to approve it.</p>
+<p>That was tolerable when people wrote every line by hand. Now that agents write a lot of the code, approval becomes the queue everything waits in. On the Claude Code team, Claude writes most of the code, and they wanted the steps after the PR to move at the same speed. Anthropic's stated goal is to "ship code as fast as teams write it."</p>
+
+<h2>Three agents, one handoff</h2>
+<p>Claude Ship combines one product that's already generally available with two new betas:</p>
+<table>
+  <thead><tr><th>Stage</th><th>Agent</th><th>Status</th><th>What it does</th></tr></thead>
+  <tbody>
+    <tr><td>Review</td><td>Code Review</td><td>Generally available</td><td>Reviews the PR against the whole codebase and posts verified findings</td></tr>
+    <tr><td>Fix</td><td>PR Steward</td><td>Beta</td><td>Fixes failing checks, merge conflicts and review comments until the PR is green</td></tr>
+    <tr><td>Approve</td><td>Claude Approvals</td><td>Beta</td><td>Applies your team's approval rules and either approves or asks for humans</td></tr>
+  </tbody>
+</table>
+<p>Each step hands off to the next, so nobody has to babysit a PR from "opened" to "ready to merge."</p>
+
+<h2>Step 1: Code Review</h2>
+<p>Code Review looks at the PR from several angles with the full repository as context. It gathers candidate issues, then checks each one adversarially before it posts anything. Only confirmed findings make it onto the PR, sorted by category.</p>
+<p>Anthropic's example is a retry helper that waits as long as the server's <code>Retry-After</code> header says. A simplified version of the bug:</p>
+<pre><code>const wait = Number(res.headers.get("Retry-After")) * 1000;
+await sleep(wait); // sleep() passes wait straight to setTimeout</code></pre>
+<p>That header can be a number of seconds, but it can also be an HTTP date. <code>Number()</code> turns a date into <code>NaN</code>, and a missing header into <code>0</code>. Either way <code>setTimeout</code> fires right away, so every retry goes out within milliseconds against a server that is already rate limiting you.</p>
+<p>The review comment shows how it confirmed the bug (nothing guards against <code>NaN</code> or <code>0</code> before the sleep) and suggests a fix: parse both formats, and fall back to exponential backoff when parsing fails.</p>
+<p>You can set review depth per repository to Quick, Standard or Deep.</p>
+<p>On the Claude Code team, merged PRs more than doubled between June and September while the share of PRs that got reverted fell by over 40%. Anthropic notes that Claude's review was one layer of their process during that period, not the only change.</p>
+
+<h2>Step 2: PR Steward</h2>
+<p>PR Steward's job is to get the PR green and keep it there. It picks up failing CI checks, merge conflicts, and comments from Code Review, other review tools or teammates, and works through them.</p>
+<p>By design it doesn't approve and doesn't merge. You steer it from the PR comments: <code>@claude</code> followed by an instruction changes what it does, and <code>@claude stop</code> makes it back off.</p>
+<p>In the retry example, it first confirmed that Code Review's finding was real. Then it rewrote the parsing and fixed a test that expected a wait but never actually waited. With the push it left a comment saying <code>Retry-After</code> is now read as either seconds or a date, with exponential backoff when it's missing. The comment also explained how to undo the change: revert the commit, or remove the <code>claude-pr-steward-watching</code> label. Every check passed. Each push it makes comes with a note like that.</p>
+
+<h2>Step 3: Claude Approvals</h2>
+<p>Your approval policy goes in one file, <code>.claude/approvals.yml</code>. Anthropic's example has three rules:</p>
+<table>
+  <thead><tr><th>Path</th><th>Default</th><th>If Claude's review passes</th></tr></thead>
+  <tbody>
+    <tr><td>Docs (<code>docs/**</code>)</td><td>2 approvers</td><td>0 humans, and Claude approves</td></tr>
+    <tr><td>Most code (<code>**</code>)</td><td>2 approvers</td><td>1 human still required</td></tr>
+    <tr><td>Billing (<code>services/billing/**</code>)</td><td colspan="2">2 humans who didn't write the PR, one of them from the payments team. Claude's review doesn't reduce this.</td></tr>
+  </tbody>
+</table>
+<p>Rules can use Code Review's verdict, and you can also write your own classifiers in plain English. Think of it as CODEOWNERS that can read the review before deciding whether Claude signs off or a person has to.</p>
+<p>Anthropic recommends running it in observe-only mode first. Once you trust its decisions, make it a required check in branch protection, so a PR can't merge without its green light.</p>
+
+<h2>How you turn it on</h2>
+<p><strong>As a developer,</strong> type <code>/ship</code> in Claude Code. Claude pushes your branch, opens the PR, reviews it, and then handles feedback and failing checks. It watches that PR from your session for up to seven days, using your own usage. The session has to stay open, the machine awake, and the branch checked out. <code>/ship stop</code> ends it. Whether the PR can merge still depends on your permissions and the repo's branch rules.</p>
+<p><strong>As an admin,</strong> you can turn it on per repository so nobody has to type a command. You choose which repos, the review depth, when it runs and a monthly spend cap. Existing branch protection and required checks still apply. Claude Approvals starts working as soon as an approvals file lands on the default branch, and admins can switch it off.</p>
+<p>The rollout Anthropic suggests is cautious: start with one repo, set a monthly cap, run approvals in observe mode, and switch enforcement on once you trust it.</p>
+
+<h2>How Anthropic uses it</h2>
+<p>The biggest change on the Claude Code team, according to Anthropic, is who can act on user feedback. Product managers now ship fixes themselves.</p>
+<p>One example: users were confused by the Analytics API docs, which implied an Admin Key could pull Pro and Team usage. A PM asked Claude Tag whether anyone was fixing it, then opened a PR. Code Review found no blocking issues, a docs reviewer signed off, Claude Approvals passed it, and it merged that evening.</p>
+
+<h2>What early customers say</h2>
+<blockquote>
+  <p>Code Review has repeatedly caught real issues before human reviewers did. People are still in the loop, but their time goes to the changes that need it.</p>
+  <p class="who">Vatsal Bhatt, Director of Engineering, TELUS (paraphrased)</p>
+</blockquote>
+<blockquote>
+  <p>"PR Steward is helping teams in our pilot spend less time working through code review feedback and more time building."</p>
+  <p class="who">Alex Devkar, SVP of Engineering and Analytics, Carvana</p>
+</blockquote>
+
+<h2>Availability and pricing</h2>
+<ul>
+  <li><strong>Who:</strong> Claude Team and Enterprise plans, for repositories on GitHub.</li>
+  <li><strong>Billing:</strong> by tokens. Cost scales with how many PRs you have and how big they are, review depth and frequency, and how much work PR Steward does.</li>
+  <li><strong>Caps:</strong> admins can set spend limits for Code Review and PR Steward. Claude Approvals has no base fee, but classifiers in your rules are billed by tokens.</li>
+  <li><strong>Watch out:</strong> a rule that relies on Claude's review triggers a billed Code Review even in observe mode. <code>/ship</code> counts as normal Claude Code usage.</li>
+  <li><strong>Not available yet</strong> for organizations using Zero Data Retention, a HIPAA configuration or customer-managed encryption keys.</li>
+  <li><strong>Credits:</strong> eligible Enterprise organizations can claim at least $10,000 in Claude Ship credit. Claim it by January 15, 2027 and use it within 30 days. Terms apply.</li>
+</ul>
+<p>Anthropic's own caveat applies: Claude Ship is AI, and it can miss bugs, security vulnerabilities and other problems. That's the case for keeping humans on the rules that matter, like the billing rule above.</p>
+</article>
+</body>
+</html>
