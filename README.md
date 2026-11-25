@@ -19,6 +19,6 @@ Personal site hosting in-depth AI engineering tutorials.
 python add-article.py <filename.html>
 ```
 
-The script extracts metadata (title, date, read time, source, description) from the HTML file, prompts for anything missing, inserts a card at the top of `index.html`, then optionally commits and pushes.
+The script extracts metadata (title, date, read time, source, description) from the HTML file, prompts for anything missing, inserts a card at the top of `index.html`, then optionally commits and pushes. If the article HTML does not already load Google Analytics 4, the script inserts the standard gtag.js snippet for `G-67RQCF9R6K` at the top of `<head>`.
 
 Built with plain HTML/CSS. No frameworks, no build step.

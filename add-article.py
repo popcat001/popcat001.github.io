@@ -16,6 +16,46 @@ import os
 import subprocess
 
 
+# ── Google Analytics 4 ─────────────────────────────────────────────────────
+
+GA_MEASUREMENT_ID = 'G-67RQCF9R6K'
+GA_SCRIPT_SRC = (
+    f'https://www.googletagmanager.com/gtag/js?id={GA_MEASUREMENT_ID}'
+)
+# Standard gtag.js snippet. Inserted once, immediately after <head>.
+GA_SNIPPET_LINES = (
+    f'<script async src="{GA_SCRIPT_SRC}"></script>',
+    "<script>window.dataLayer = window.dataLayer || []; "
+    "function gtag(){dataLayer.push(arguments);} "
+    "gtag('js', new Date()); "
+    f"gtag('config', '{GA_MEASUREMENT_ID}');</script>",
+)
+
+
+def ensure_ga_tag(html):
+    """Return html with exactly one GA4 tag at the top of <head>.
+
+    Pages that already load this measurement ID are left unchanged.
+    """
+    if GA_SCRIPT_SRC in html:
+        return html
+    match = re.search(r'<head\b[^>]*>', html, re.IGNORECASE)
+    if not match:
+        raise ValueError('Could not find <head> to insert the Google Analytics tag')
+    tail = html[match.end():]
+    newline = '\r\n' if tail.startswith('\r\n') else '\n'
+    if tail.startswith(('\n', '\r\n')):
+        following = tail[len(newline):]
+        extra_newline = ''
+    else:
+        following = tail
+        extra_newline = newline
+    indent_match = re.match(r'[ \t]+', following)
+    indent = indent_match.group(0) if indent_match else ''
+    block = newline + newline.join(indent + line for line in GA_SNIPPET_LINES)
+    return html[:match.end()] + block + extra_newline + tail
+
+
 # ── Metadata extraction ────────────────────────────────────────────────────
 
 def extract_title(html):
@@ -154,6 +194,15 @@ def main():
 
     with open(filepath, 'r', encoding='utf-8') as f:
         html = f.read()
+
+    # New articles are written by hand. Make sure they load the same GA4 tag
+    # as the rest of the site before the card is added.
+    updated = ensure_ga_tag(html)
+    if updated != html:
+        html = updated
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(html)
+        print(f'Added Google Analytics tag ({GA_MEASUREMENT_ID}) to {filename}.')
 
     # ── Extract metadata ──
     title       = extract_title(html)
